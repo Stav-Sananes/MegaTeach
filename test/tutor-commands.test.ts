@@ -45,12 +45,24 @@ function context(cwd: string, confirmAnswer = true) {
   return { ctx, notifications, widgets };
 }
 
-/** Await the body before cleaning up — an async body outliving its own directory is a silent test.  */
+/**
+ * Await the body before cleaning up — an async body outliving its own directory
+ * is a silent test.
+ *
+ * HOME is repointed at the temp directory for the duration: /teach and
+ * /philosophy fall back to `~/.pi/agent/PHILOSOPHY.md` and `~/.claude/PHILOSOPHY.md`,
+ * and the README tells every user to create one. Without this, whether these
+ * tests pass depends on whose machine they run on.
+ */
 async function withTempDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
   const dir = mkdtempSync(join(tmpdir(), "megateach-tutor-"));
+  const realHome = process.env.HOME;
+  process.env.HOME = join(dir, "fake-home");
   try {
     return await fn(dir);
   } finally {
+    if (realHome === undefined) delete process.env.HOME;
+    else process.env.HOME = realHome;
     rmSync(dir, { recursive: true, force: true });
   }
 }
@@ -173,6 +185,45 @@ test("delegate names the agents that exist when handed one that does not", async
     await assert.rejects(
       () => tools.get("delegate").execute("id", { agent: "nope", task: "x" }, undefined, undefined, ctx),
       /Unknown agent "nope".*svg-maker/s,
+    );
+  });
+});
+
+test("the delegate schema advertises the shipped agents without depending on the launch directory", async () => {
+  await withTempDir(async (dir) => {
+    // The schema is built once at registration, when the session cwd is unknown.
+    // Deriving it from process.cwd() would advertise an empty list whenever pi
+    // was launched elsewhere, and the model would never call delegate at all.
+    const original = process.cwd();
+    process.chdir(dir);
+    try {
+      const { pi, tools } = harness();
+      tutorExtension(pi);
+      const delegate = tools.get("delegate");
+      for (const agent of ["svg-maker", "mermaid-maker", "fact-checker"]) {
+        assert.match(delegate.description, new RegExp(agent));
+        assert.match(delegate.parameters.properties.agent.description, new RegExp(agent));
+      }
+      assert.match(delegate.description, /\.teach\/agents/, "project-local overrides are advertised too");
+    } finally {
+      process.chdir(original);
+    }
+  });
+});
+
+test("delegate does not spawn a subagent for an already-cancelled turn", async () => {
+  await withTempDir(async (dir) => {
+    const { pi, tools } = harness();
+    tutorExtension(pi);
+    const { ctx } = context(dir);
+    const controller = new AbortController();
+    controller.abort();
+    await assert.rejects(
+      () =>
+        tools
+          .get("delegate")
+          .execute("id", { agent: "svg-maker", task: "x" }, controller.signal, undefined, ctx),
+      /Cancelled before the subagent started/,
     );
   });
 });

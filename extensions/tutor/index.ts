@@ -39,16 +39,22 @@ interface AgentDef {
 /**
  * Later directories win, so a learner can drop `.teach/agents/svg-maker.md` in a
  * project and override the shipped one without forking the repo.
+ *
+ * `cwd` is optional because the tool schema is built once at registration, when
+ * the session cwd is not yet known. Using `process.cwd()` there would be worse
+ * than omitting it: pi launched from a different directory than the session
+ * would advertise an empty agent list to the model, which then never calls
+ * `delegate` even though the agents resolve fine at execution time.
  */
-function agentDirs(cwd: string): string[] {
+function agentDirs(cwd?: string): string[] {
   return [
     join(REPO_ROOT, "agents"),
     join(homedir(), ".pi", "agent", "agents"),
-    join(cwd, ".teach", "agents"),
+    ...(cwd ? [join(cwd, ".teach", "agents")] : []),
   ];
 }
 
-function discoverAgents(cwd: string): Map<string, AgentDef> {
+function discoverAgents(cwd?: string): Map<string, AgentDef> {
   const found = new Map<string, AgentDef>();
   for (const dir of agentDirs(cwd)) {
     if (!existsSync(dir)) continue;
@@ -121,6 +127,14 @@ function runAgent(agent: AgentDef, task: string, cwd: string, signal?: AbortSign
   const { command, args: argv } = piInvocation(args);
 
   return new Promise((resolvePromise) => {
+    // An already-aborted signal never fires "abort", so without this check a turn
+    // cancelled before the spawn would still start an orphan pi process and wait
+    // for it. An svg-maker render loop is not a cheap orphan.
+    if (signal?.aborted) {
+      resolvePromise({ ok: false, output: "Cancelled before the subagent started." });
+      return;
+    }
+
     const child = spawn(command, argv, { cwd, stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
@@ -230,8 +244,9 @@ export default function tutorExtension(pi: ExtensionAPI) {
     },
   });
 
-  const agents = discoverAgents(process.cwd());
-  const agentList = [...agents.values()];
+  // Registration-time discovery: shipped and global agents only. Project-local
+  // agents are picked up per call, once the session cwd is known.
+  const agentList = [...discoverAgents().values()];
 
   pi.registerTool({
     name: "delegate",
@@ -241,6 +256,8 @@ export default function tutorExtension(pi: ExtensionAPI) {
       (agentList.length > 0
         ? agentList.map((a) => `- ${a.name}: ${a.description}`).join("\n")
         : "(none found — add markdown agent definitions under agents/)") +
+      "\nA project may define more in .teach/agents/; those are accepted too and are listed" +
+      "\nin the error if you name one that does not exist." +
       "\nThe subagent cannot see this conversation, so the task must carry everything it needs.",
     promptSnippet: "delegate - run a subagent (diagrams, SVG, fact-checking) in an isolated context",
     promptGuidelines: [

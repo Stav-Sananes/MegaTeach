@@ -176,6 +176,52 @@ test("the rationale reaches the learner only after they answer", async () => {
   });
 });
 
+test("the rationale is shown on every outcome, because the result claims it was", async () => {
+  // The tool tells the model "Rationale shown to them". A wrong answer is where
+  // the reason matters most; suppressing it there makes that line a lie, and the
+  // model then re-explains a step the learner never had explained.
+  for (const answer of ["A matrix", "I don't know", undefined]) {
+    await withTempDir(async (dir) => {
+      const { pi, registered } = harness();
+      quizExtension(pi);
+      const result = await registered.tools
+        .get("quiz")
+        .execute("id", QUESTION, undefined, undefined, context(dir, registered, answer));
+
+      assert.match(result.content[0].text, /Rationale shown to them/);
+      assert.match(
+        registered.notifications.at(-1)!.message,
+        /linear map from vectors to scalars/,
+        `answer: ${answer ?? "(dismissed)"}`,
+      );
+    });
+  }
+});
+
+test("a negative correct_index throws instead of grading everyone wrong", async () => {
+  // TypeBox's minimum: 0 only guards the model-driven path. A replayed session or
+  // a direct call slips through, and then every learner is marked incorrect
+  // against an option that does not exist.
+  await withTempDir(async (dir) => {
+    const { pi, registered } = harness();
+    quizExtension(pi);
+    await assert.rejects(
+      () =>
+        registered.tools
+          .get("quiz")
+          .execute(
+            "id",
+            { ...QUESTION, correct_index: -3 },
+            undefined,
+            undefined,
+            context(dir, registered, "A vector"),
+          ),
+      /out of range/,
+    );
+    assert.deepEqual(readAttempts(dir), []);
+  });
+});
+
 test("recall reports the map back to the model, and /probe renders it for the human", async () => {
   await withTempDir(async (dir) => {
     const { pi, registered } = harness();

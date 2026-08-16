@@ -23,11 +23,18 @@ function statePath(cwd: string): string {
   return join(cwd, LOG_DIR, "link.json");
 }
 
-/** Expand `~`, resolve against cwd. */
+/**
+ * Expand `~`, resolve against cwd.
+ *
+ * The `@` comes off first: some models prefix paths with it, and `@~/vault/a.md`
+ * is a likely combination given that `~` paths are the documented `/link` form.
+ * Stripping in the other order leaves the `~` unexpanded and quietly creates a
+ * directory literally named `~` inside the project.
+ */
 export function resolveNotePath(cwd: string, input: string): string {
-  const expanded = input.startsWith("~") ? join(homedir(), input.slice(1)) : input;
-  // Some models prefix paths with @. Built-in tools strip it; so do we.
-  return resolve(cwd, expanded.replace(/^@/, ""));
+  const unprefixed = input.replace(/^@/, "");
+  const expanded = unprefixed.startsWith("~") ? join(homedir(), unprefixed.slice(1)) : unprefixed;
+  return resolve(cwd, expanded);
 }
 
 export function readLink(cwd: string): LinkState | null {

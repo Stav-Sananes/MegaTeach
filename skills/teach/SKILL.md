@@ -130,14 +130,32 @@ is unchanged either way; only the mechanism differs.
 | Isolated subagent | `delegate` tool | `Task`/`Agent` tool with the definitions in `agents/` |
 
 Without the `quiz` tool you must still commit before you see the answer: state the
-correct option to yourself in your reasoning, ask, and then log the attempt with
+correct option to yourself in your reasoning, ask, and then log the attempt.
+
+Log it with the script that sits beside this file. **Use the absolute path of the
+directory you read this SKILL.md from** — the skill is usually installed outside
+the learner's project (`~/.claude/skills/teach/`, `~/.pi/agent/skills/teach/`), so
+a path relative to the working directory will not exist:
 
 ```bash
-skills/teach/scripts/log-answer.sh <strand> <correct|wrong|unknown> "<question>"
+<this-skill-dir>/scripts/log-answer.sh <strand> <correct|wrong|unknown> "<question>" [probe|teach]
 ```
 
-which appends the same JSONL shape the `quiz` tool writes. Do not skip the logging.
-An unlogged probe is a probe that only helps this session.
+If you cannot locate or run the script, append the line yourself — the format is
+the contract, not the script:
+
+```bash
+mkdir -p .teach && cat >> .teach/probe-log.jsonl <<'EOF'
+{"ts":"<ISO-8601>","strand":"<strand>","phase":"probe","question":"<question>","options":[],"correctIndex":-1,"answerIndex":null,"answer":"","correct":false,"admitted":true}
+EOF
+```
+
+`correct` and `admitted` are the two fields everything downstream aggregates on:
+`correct: true` for right, both `false` for a wrong guess, `admitted: true` for
+"I don't know".
+
+Do not skip the logging, and confirm the file grew after the first write. An
+unlogged probe is a probe that only helps this session.
 
 ---
 

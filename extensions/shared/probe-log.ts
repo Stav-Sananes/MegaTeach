@@ -62,7 +62,9 @@ export function logPath(cwd: string): string {
  */
 export function appendAttempt(cwd: string, attempt: Omit<ProbeAttempt, "ts"> & { ts?: string }): boolean {
   const path = logPath(cwd);
-  const line = JSON.stringify({ ts: new Date().toISOString(), ...attempt });
+  // Spread first: an explicit `ts: undefined` from a caller must not erase the
+  // stamp, or the attempt lands in 1970 and reads stale forever.
+  const line = JSON.stringify({ ...attempt, ts: attempt.ts ?? new Date().toISOString() });
   try {
     mkdirSync(dirname(path), { recursive: true });
     appendFileSync(path, `${line}\n`, "utf8");

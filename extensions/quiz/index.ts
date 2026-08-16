@@ -92,9 +92,9 @@ export default function quizExtension(pi: ExtensionAPI) {
       const { question, options, correct_index, strand, rationale } = params;
       const phase = params.phase ?? "probe";
 
-      if (correct_index >= options.length) {
+      if (correct_index < 0 || correct_index >= options.length) {
         throw new Error(
-          `correct_index ${correct_index} is out of range for ${options.length} options (max ${options.length - 1}).`,
+          `correct_index ${correct_index} is out of range for ${options.length} options (valid: 0..${options.length - 1}).`,
         );
       }
 
@@ -123,10 +123,15 @@ export default function quizExtension(pi: ExtensionAPI) {
         topic: params.topic,
       });
 
-      ctx.ui.notify(
-        correct ? `Correct — ${rationale}` : admitted ? "Noted." : `Not quite — ${options[correct_index]}`,
-        correct ? "info" : admitted ? "info" : "warning",
-      );
+      // The rationale goes out on every branch. A wrong answer is the case where
+      // the reason matters most, and the tool result below tells the model the
+      // learner has seen it — so suppressing it here would make that a lie.
+      const shown = correct
+        ? `Correct — ${rationale}`
+        : admitted
+          ? `The answer is ${options[correct_index]} — ${rationale}`
+          : `Not quite — ${options[correct_index]}. ${rationale}`;
+      ctx.ui.notify(shown, correct || admitted ? "info" : "warning");
 
       const verdict = admitted
         ? "The learner did not answer (chose \"I don't know\" or dismissed the question)."

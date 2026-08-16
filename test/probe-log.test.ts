@@ -55,6 +55,24 @@ test("append then read round-trips an attempt", async () => {
   });
 });
 
+test("an explicitly undefined timestamp is stamped now, not 1970", async () => {
+  // `{ ts: undefined }` type-checks, JSON.stringify drops the key, and the parser
+  // falls back to the epoch — which reads `stale` forever and sorts last.
+  await withTempDir((dir) => {
+    appendAttempt(dir, { ...attempt(), ts: undefined as unknown as string });
+    const [logged] = readAttempts(dir);
+    assert.ok(ageInDays(logged!.ts, Date.now()) < 1, `stamped ${logged?.ts}`);
+  });
+});
+
+test("a caller-supplied timestamp is still honoured", async () => {
+  await withTempDir((dir) => {
+    const ts = new Date(NOW).toISOString();
+    appendAttempt(dir, attempt({ ts }));
+    assert.equal(readAttempts(dir)[0]?.ts, ts);
+  });
+});
+
 test("reading a missing log yields no attempts rather than throwing", async () => {
   await withTempDir((dir) => {
     assert.deepEqual(readAttempts(dir), []);

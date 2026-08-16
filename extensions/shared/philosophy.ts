@@ -22,21 +22,25 @@ export interface PhilosophyResult {
 }
 
 /**
- * Search order: project first, then the user's global pi config. Project wins so
+ * Search order: project first, then the user's global config. Project wins so
  * that "how I want to be taught category theory" can differ from "how I want to
  * be taught Rust" without editing one global file back and forth.
+ *
+ * `home` is injectable so tests can scope the search to a temp directory. Without
+ * it, whether the suite passes depends on whether the machine running it happens
+ * to have a global PHILOSOPHY.md — which the README tells every user to create.
  */
-export function philosophyCandidates(cwd: string): string[] {
+export function philosophyCandidates(cwd: string, home: string = homedir()): string[] {
   return [
     join(cwd, PHILOSOPHY_FILE),
     join(cwd, ".teach", PHILOSOPHY_FILE),
-    join(homedir(), ".pi", "agent", PHILOSOPHY_FILE),
-    join(homedir(), ".claude", PHILOSOPHY_FILE),
+    join(home, ".pi", "agent", PHILOSOPHY_FILE),
+    join(home, ".claude", PHILOSOPHY_FILE),
   ];
 }
 
-export function loadPhilosophy(cwd: string): PhilosophyResult {
-  const candidates = philosophyCandidates(cwd);
+export function loadPhilosophy(cwd: string, home?: string): PhilosophyResult {
+  const candidates = philosophyCandidates(cwd, home);
   for (const path of candidates) {
     if (!existsSync(path)) continue;
     try {
@@ -59,8 +63,11 @@ export function philosophyBlock(result: PhilosophyResult): string {
       result.content,
     ].join("\n");
   }
+  // result.path already holds the preferred location for the session's cwd.
+  // Re-deriving it from process.cwd() would name a directory the learner is not
+  // working in, and contradict the path /philosophy would actually write to.
   return [
-    `No ${PHILOSOPHY_FILE} was found (looked in: ${philosophyCandidates(process.cwd()).join(", ")}).`,
+    `No ${PHILOSOPHY_FILE} was found. The preferred location is ${result.path}.`,
     "Say so in your first message, use the skill's default teaching style, and suggest",
     "the learner run /philosophy to write their own.",
   ].join("\n");

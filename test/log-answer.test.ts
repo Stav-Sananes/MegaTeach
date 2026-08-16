@@ -5,7 +5,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,6 +58,16 @@ test("log-answer.sh escapes quotes, backslashes, and newlines in the question", 
     assert.equal(attempts.length, 1, "an unescaped quote would have produced an unparseable line");
     assert.equal(attempts[0]?.question, 'Does \\alpha mean "first"?\nSecond line.');
   });
+});
+
+test("the skill tells the model to invoke the script by its own directory", async () => {
+  // The skill is installed outside the learner's project (~/.claude/skills/teach),
+  // and Claude Code runs with cwd = the learner's project. A repo-relative command
+  // resolves to nothing there, and every probe answer is silently lost.
+  const skill = readFileSync(fileURLToPath(new URL("../skills/teach/SKILL.md", import.meta.url)), "utf8");
+  assert.match(skill, /<this-skill-dir>\/scripts\/log-answer\.sh/);
+  assert.doesNotMatch(skill, /^\s*skills\/teach\/scripts\/log-answer\.sh /m);
+  assert.match(skill, /probe-log\.jsonl/, "the raw JSONL fallback is documented too");
 });
 
 test("log-answer.sh rejects an unknown result rather than logging a wrong measurement", async () => {
