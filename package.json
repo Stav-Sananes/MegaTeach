@@ -1,0 +1,52 @@
+{
+  "name": "megateach",
+  "version": "0.1.0",
+  "description": "An AI tutor that measures what you know before it teaches you anything. probe → plan → teach.",
+  "keywords": [
+    "pi-package",
+    "agent-skills",
+    "tutor",
+    "teaching",
+    "learning",
+    "spaced-measurement"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "files": [
+    "agents",
+    "extensions",
+    "skills",
+    "PHILOSOPHY.example.md",
+    "install.sh",
+    "uninstall.sh"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck && shellcheck install.sh uninstall.sh skills/teach/scripts/log-answer.sh"
+  },
+  "pi": {
+    "extensions": [
+      "extensions/quiz/index.ts",
+      "extensions/md-log/index.ts",
+      "extensions/tutor/index.ts"
+    ],
+    "skills": [
+      "skills"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "^0.84.2",
+    "@earendil-works/pi-coding-agent": "^0.84.2",
+    "typebox": "^1.3.7",
+    "typescript": "^5.9.2"
+  }
+}

@@ -1,0 +1,7 @@
+# The learner's own data. Never commit someone's understanding map.
+.teach/
+PHILOSOPHY.md
+
+node_modules/
+*.tgz
+.DS_Store

@@ -1,0 +1,7 @@
+{
+  "name": "megateach",
+  "description": "An AI tutor that measures what you know before it teaches you anything: probe, plan, then teach one reasoning step at a time.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "keywords": ["teaching", "learning", "tutor", "agent-skills"]
+}
