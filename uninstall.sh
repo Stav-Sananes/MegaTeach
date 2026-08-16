@@ -18,6 +18,7 @@ for link in \
   "$PI_HOME/extensions/quiz" \
   "$PI_HOME/extensions/md-log" \
   "$PI_HOME/extensions/tutor" \
+  "$PI_HOME/extensions/sources" \
   "$PI_HOME/extensions/shared" \
   "$CLAUDE_HOME/skills/teach"
 do

@@ -55,8 +55,8 @@ cd "$WORK"
 
 echo "inventory"
 out="$(run_step inventory)"
-expect "the four commands register"    "SMOKE commands: probe, link, teach, philosophy" "$out"
-expect "the four tools register"       "quiz, recall, note, delegate"                   "$out"
+expect "every command registers"       "probe, link, teach, philosophy, source"          "$out"
+expect "every tool registers"          "quiz, recall, note, delegate, source_search, source_read" "$out"
 expect "the teach skill is discovered" "SMOKE skill: loaded"                            "$out"
 
 echo "quiz"
@@ -83,6 +83,38 @@ echo "note-unlinked"
 rm -f .teach/link.json
 out="$(run_step note-unlinked)"
 expect "an unlinked note tells the model what to ask for" "run /link" "$out"
+
+echo "sources"
+out="$(run_step sources-empty)"
+expect "an empty library points at /source add" "source add" "$out"
+
+# Build a library the way /source add would, then let the model retrieve from it.
+mkdir -p .teach/sources
+printf 'A one-form is a linear map from vectors to scalars.\f' > .teach/sources/smoke-notes.txt
+printf 'The exterior derivative generalises grad, curl, and divergence.\n' >> .teach/sources/smoke-notes.txt
+cat > .teach/sources/manifest.json <<'JSON'
+{
+  "version": 1,
+  "docs": [
+    {
+      "id": "smoke-notes",
+      "title": "smoke-notes.md",
+      "path": "/tmp/smoke-notes.md",
+      "addedAt": "2026-01-01T00:00:00.000Z",
+      "pages": 2,
+      "chars": 120,
+      "hash": "smoke",
+      "extractedBy": "test"
+    }
+  ]
+}
+JSON
+
+out="$(run_step sources)"
+expect "the passage is found"                 "generalises grad"       "$out"
+expect "it is cited with a turnable page"     "smoke-notes.md p.2"     "$out"
+expect "the chunk id is returned for re-reading" "chunk smoke-notes#2" "$out"
+expect "source_read returns neighbours"       "chunk smoke-notes#1"    "$out"
 
 echo "delegate"
 out="$(run_step delegate-unknown)"

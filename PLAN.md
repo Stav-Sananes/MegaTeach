@@ -99,6 +99,28 @@ The SVG loop depends on the model having vision.
 - [x] Unit tests on the probe log, philosophy loading, and link state
 - [x] CI on push
 
+### M8 — Teach from the learner's own sources
+- [x] `/source add <path>` ingests files or whole directories (`.pdf`, `.md`, `.txt`, …)
+- [x] PDF extraction ladder: pdftotext → mutool → python3+pypdf, every rung emitting
+      page breaks so citations stay page-exact; `/source doctor` reports what a
+      machine has
+- [x] BM25 retrieval over page-attributed chunks, computed locally — no embedding
+      API, no vector store, no key, no network
+- [x] `source_search` and `source_read` tools; chunks never span a page
+- [x] SKILL.md: sources outrank the model's memory on notation and conventions,
+      every borrowed claim is cited, silence is stated rather than filled
+- [ ] Run it against a real course PDF and check whether keyword retrieval is
+      enough, or whether paraphrase-heavy material needs embeddings
+
+The point is not "chat with your PDF". It is that a probe question drawn from the
+learner's own course measures the thing they are actually being examined on, and a
+convention taken from their own notes is the one their marker will expect.
+
+**Known limit:** matching is lexical. A learner who asks about "linear functionals"
+will not find a source that only ever says "one-forms". The mitigation in the skill
+is to issue several queries with different phrasings; whether that is sufficient is
+the open box above.
+
 ---
 
 ## The open-source design decision
@@ -140,4 +162,10 @@ is somebody else's API pricing. Check current rates before committing.
   scope until the probe itself is reliably good.
 - **Strand naming.** Strands are free-form paths chosen by the model. Two sessions on
   the same topic can invent different names and fail to aggregate. A canonical
-  vocabulary per topic would fix it, at the cost of flexibility.
+  vocabulary per topic would fix it, at the cost of flexibility. Sources give this a
+  natural answer: derive the strand vocabulary from the learner's own table of
+  contents rather than inventing one per session.
+- **Lexical vs. semantic retrieval.** BM25 keeps the whole system offline and
+  key-free, which is worth a lot. If real use shows it missing passages that use
+  different words for the same idea, the upgrade path is a local embedding model —
+  not a hosted API, which would put a key between the learner and their own notes.

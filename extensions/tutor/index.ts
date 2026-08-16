@@ -23,6 +23,7 @@ import { Type } from "typebox";
 import { assetDir, readLink } from "../shared/link.ts";
 import { PHILOSOPHY_FILE, loadPhilosophy, philosophyBlock } from "../shared/philosophy.ts";
 import { formatForModel, readAttempts, summarize } from "../shared/probe-log.ts";
+import { readManifest } from "../shared/sources.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "..", "..");
@@ -172,6 +173,7 @@ function kickoff(topic: string, ctx: ExtensionContext): string {
   const philosophy = loadPhilosophy(ctx.cwd);
   const rows = summarize(readAttempts(ctx.cwd));
   const link = readLink(ctx.cwd);
+  const docs = readManifest(ctx.cwd).docs;
 
   return [
     `Teach me: ${topic}`,
@@ -181,6 +183,14 @@ function kickoff(topic: string, ctx: ExtensionContext): string {
     philosophyBlock(philosophy),
     "",
     formatForModel(rows, Date.now()),
+    "",
+    docs.length > 0
+      ? [
+          `The learner has added ${docs.length} source(s). These outrank your own memory on notation,`,
+          "conventions, and definitions — search them with source_search and cite what you use:",
+          ...docs.map((d) => `- ${d.id}: ${d.title} (${d.pages} page(s))`),
+        ].join("\n")
+      : "No sources have been added. Teach from your own knowledge, and mention /source add <path> if the learner has course material you should be teaching from instead.",
     "",
     link
       ? `Write lesson content, the plan graph, and every derivation to ${link.path} with the note tool.`

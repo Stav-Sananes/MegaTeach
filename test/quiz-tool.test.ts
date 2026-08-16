@@ -165,22 +165,11 @@ test("an out-of-range correct_index throws instead of silently mis-grading", asy
   });
 });
 
-test("the rationale reaches the learner only after they answer", async () => {
-  await withTempDir(async (dir) => {
-    const { pi, registered } = harness();
-    quizExtension(pi);
-    await registered.tools
-      .get("quiz")
-      .execute("id", QUESTION, undefined, undefined, context(dir, registered, "A vector"));
-    assert.match(registered.notifications.at(-1)!.message, /linear map from vectors to scalars/);
-  });
-});
-
-test("the rationale is shown on every outcome, because the result claims it was", async () => {
-  // The tool tells the model "Rationale shown to them". A wrong answer is where
-  // the reason matters most; suppressing it there makes that line a lie, and the
-  // model then re-explains a step the learner never had explained.
-  for (const answer of ["A matrix", "I don't know", undefined]) {
+test("the probe reveals nothing — not the answer, not the reason", async () => {
+  // Phase 1 forbids teaching, and revealing mid-probe also contaminates every
+  // later question on the strand: the learner now knows something they did not
+  // walk in with, so the measurement stops measuring what they brought.
+  for (const answer of ["A vector", "A matrix", "I don't know", undefined]) {
     await withTempDir(async (dir) => {
       const { pi, registered } = harness();
       quizExtension(pi);
@@ -188,12 +177,36 @@ test("the rationale is shown on every outcome, because the result claims it was"
         .get("quiz")
         .execute("id", QUESTION, undefined, undefined, context(dir, registered, answer));
 
-      assert.match(result.content[0].text, /Rationale shown to them/);
-      assert.match(
-        registered.notifications.at(-1)!.message,
-        /linear map from vectors to scalars/,
-        `answer: ${answer ?? "(dismissed)"}`,
-      );
+      const seen = registered.notifications.at(-1)!.message;
+      const label = `answer: ${answer ?? "(dismissed)"}`;
+      assert.doesNotMatch(seen, /linear map from vectors to scalars/, label);
+      assert.doesNotMatch(seen, /A vector/, label);
+      assert.match(seen, /Recorded/, label);
+      assert.match(result.content[0].text, /shown neither the correct answer nor the rationale/, label);
+    });
+  }
+});
+
+test("the teach phase does reveal both, and says so accurately", async () => {
+  // Here the point is the opposite: a wrong answer during teaching is where the
+  // reason matters most, and the model is told the learner has heard it.
+  for (const answer of ["A matrix", "I don't know", "A vector"]) {
+    await withTempDir(async (dir) => {
+      const { pi, registered } = harness();
+      quizExtension(pi);
+      const result = await registered.tools
+        .get("quiz")
+        .execute(
+          "id",
+          { ...QUESTION, phase: "teach" },
+          undefined,
+          undefined,
+          context(dir, registered, answer),
+        );
+
+      const label = `answer: ${answer}`;
+      assert.match(registered.notifications.at(-1)!.message, /linear map from vectors to scalars/, label);
+      assert.match(result.content[0].text, /was shown the correct answer and this rationale/, label);
     });
   }
 });

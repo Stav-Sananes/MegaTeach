@@ -77,6 +77,19 @@ const scripts: Record<string, Script> = {
     fauxAssistantMessage("SMOKE-OK delegate-unknown"),
   ],
 
+  /** Grounded teaching: find a passage in the learner's material, then read around it. */
+  sources: [
+    fauxAssistantMessage(fauxToolCall("source_search", { query: "exterior derivative" })),
+    fauxAssistantMessage(fauxToolCall("source_read", { chunk_id: "smoke-notes#1", context: 1 })),
+    fauxAssistantMessage("SMOKE-OK sources"),
+  ],
+
+  /** With no library, the tool must point at /source add rather than inventing an answer. */
+  "sources-empty": [
+    fauxAssistantMessage(fauxToolCall("source_search", { query: "anything" })),
+    fauxAssistantMessage("SMOKE-OK sources-empty"),
+  ],
+
   /** No tool calls: just report what pi discovered. */
   inventory: [fauxAssistantMessage("SMOKE-OK inventory")],
 };

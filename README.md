@@ -86,17 +86,52 @@ lesson with mathematics and diagrams intact.
 
 | Command | What |
 |---|---|
-| `/teach <topic>` | Start a session: loads your philosophy and prior map, then probes |
+| `/teach <topic>` | Start a session: loads your philosophy, prior map, and sources, then probes |
 | `/link <path>` | Point the session at a markdown file it writes lessons into |
+| `/source add <path>` | Add your own material — PDFs, notes, a whole course directory |
 | `/probe` | Show your measured map — per strand, with staleness |
 | `/philosophy` | Show your PHILOSOPHY.md, or scaffold one |
+
+## Teach from your own material
+
+Point it at your course PDF, your lecture notes, your professor's problem sets:
+
+```
+/source add ~/course/lectures/          # a file, or a whole directory
+/source list                            # what's in the library
+/source doctor                          # which PDF extractors this machine has
+/teach stokes' theorem
+```
+
+Your sources then **outrank the model's memory** on notation, conventions, and
+definitions — the things that differ between courses and quietly make a correct
+generic explanation useless to you. Every claim drawn from them is cited as
+`[lecture-3.pdf p.12]`, so you can turn to the page and check. Where your sources
+are silent, it says so instead of blurring the boundary.
+
+Retrieval is BM25 over page-attributed chunks, computed locally: **no embedding
+API, no vector database, no key, no network.** The trade is that matching is
+keyword-based rather than semantic, so the tutor issues several queries with
+different phrasings — cheap, because searching costs nothing.
+
+PDFs need one text extractor. `/source doctor` tells you what you have:
+
+```bash
+brew install poppler          # macOS — pdftotext, the best output
+apt install poppler-utils     # Debian/Ubuntu
+python3 -m pip install pypdf  # no system package needed
+```
+
+`.md` and `.txt` sources need none of this. Scanned PDFs with no text layer are
+reported as such rather than ingested empty.
 
 ## What it writes
 
 ```
 .teach/
 ├── probe-log.jsonl   every graded question, with strand, verdict, timestamp
-└── link.json         which note this project writes into
+├── link.json         which note this project writes into
+└── sources/          extracted text of your material, plus manifest.json
 ```
 
 `probe-log.jsonl` is the whole state of the system. Everything else — the `/probe`
@@ -117,7 +152,8 @@ one question instead of building on it.
 | `extensions/quiz/` | `quiz` + `recall` tools, `/probe` command |
 | `extensions/md-log/` | `/link` command and `note` tool |
 | `extensions/tutor/` | `/teach`, `/philosophy`, and the `delegate` subagent runner |
-| `extensions/shared/` | Probe log, philosophy loading, link state — all unit tested |
+| `extensions/sources/` | `/source`, `source_search`, `source_read`, and the PDF extraction ladder |
+| `extensions/shared/` | Probe log, philosophy, link state, retrieval — all unit tested |
 | `agents/` | Subagent definitions: `svg-maker`, `mermaid-maker`, `fact-checker` |
 | `PHILOSOPHY.example.md` | Template for the fork point |
 | `PLAN.md` | Build roadmap and what is still open |

@@ -123,15 +123,24 @@ export default function quizExtension(pi: ExtensionAPI) {
         topic: params.topic,
       });
 
-      // The rationale goes out on every branch. A wrong answer is the case where
-      // the reason matters most, and the tool result below tells the model the
-      // learner has seen it — so suppressing it here would make that a lie.
-      const shown = correct
-        ? `Correct — ${rationale}`
-        : admitted
-          ? `The answer is ${options[correct_index]} — ${rationale}`
-          : `Not quite — ${options[correct_index]}. ${rationale}`;
-      ctx.ui.notify(shown, correct || admitted ? "info" : "warning");
+      // What the learner sees depends on the phase, and the tool result below
+      // reports exactly that — the model must never be told an explanation
+      // landed when it did not.
+      //
+      // The probe stays silent: revealing the answer mid-probe teaches, which
+      // phase 1 forbids, and it contaminates every later question on the strand
+      // because the learner now knows something they did not walk in with.
+      const revealed = phase === "teach";
+      const shown = revealed
+        ? correct
+          ? `Correct — ${rationale}`
+          : admitted
+            ? `The answer is ${options[correct_index]} — ${rationale}`
+            : `Not quite — ${options[correct_index]}. ${rationale}`
+        : correct
+          ? "Recorded."
+          : "Recorded — moving on.";
+      ctx.ui.notify(shown, revealed && !correct && !admitted ? "warning" : "info");
 
       const verdict = admitted
         ? "The learner did not answer (chose \"I don't know\" or dismissed the question)."
@@ -151,7 +160,9 @@ export default function quizExtension(pi: ExtensionAPI) {
               verdict,
               `Correct answer: ${options[correct_index]}`,
               `Strand: ${strand}`,
-              `Rationale shown to them: ${rationale}`,
+              revealed
+                ? `The learner was shown the correct answer and this rationale: ${rationale}`
+                : "The learner was shown neither the correct answer nor the rationale — this is the probe phase. Do not refer to a reason they have not heard.",
               direction,
               logged ? "" : `(Warning: could not write to ${logPath(ctx.cwd)} — the probe log is not recording.)`,
             ]

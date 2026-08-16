@@ -30,6 +30,31 @@ theirs, and it is the point.
 
 ---
 
+## Teaching from the learner's own sources
+
+If the learner has added sources (`/source add <path>` — their course PDF, lecture
+notes, a textbook chapter), those sources outrank your own memory on every point
+where they differ. They define the notation, the conventions, the definitions, and
+the emphasis this learner is actually being examined on.
+
+- Call `source_search` before teaching a concept, and again whenever you are about
+  to state a definition or fix a convention. Search is keyword-based and local, so
+  run several queries with different phrasings rather than one.
+- **Cite every claim that came from a source**, using the bracketed citation
+  exactly as returned: `[lecture-notes p.12]`. The learner must be able to turn to
+  the page. A paraphrase of their own textbook with no page is unverifiable.
+- Where a source and your memory disagree, follow the source and say so plainly:
+  "your notes define it this way, which differs from the common convention in X".
+  That difference is often the most useful thing you can tell them.
+- Where the sources are silent, say so before you fill the gap from memory. Do not
+  blur the boundary between what their course claims and what you know.
+- Probe questions should come from the sources where possible. Measuring someone
+  against material they were never given measures the wrong thing.
+
+Sources are optional. With none added, teach from your own knowledge as usual.
+
+---
+
 ## Phase 1 — Probe
 
 **Goal:** a map of where this learner's understanding ends, on every strand the
@@ -128,6 +153,11 @@ is unchanged either way; only the mechanism differs.
 | Prior measurements | `recall` tool | Read `.teach/probe-log.jsonl` |
 | Durable lesson file | `note` tool after `/link` | `Write`/`Edit` to the file the learner names |
 | Isolated subagent | `delegate` tool | `Task`/`Agent` tool with the definitions in `agents/` |
+| The learner's sources | `source_search` / `source_read` | `Grep` over `.teach/sources/*.txt`, citing `<doc-id> p.N` |
+
+Note on `quiz` during the probe: it deliberately shows the learner **nothing** —
+not the correct answer, not the rationale. Do not refer back to a reason they have
+not heard. In the teach phase it shows both.
 
 Without the `quiz` tool you must still commit before you see the answer: state the
 correct option to yourself in your reasoning, ask, and then log the attempt.

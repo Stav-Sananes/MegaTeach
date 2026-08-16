@@ -48,6 +48,7 @@ install_pi() {
   ln -sfn "$REPO/extensions/quiz"       "$PI_HOME/extensions/quiz"
   ln -sfn "$REPO/extensions/md-log"     "$PI_HOME/extensions/md-log"
   ln -sfn "$REPO/extensions/tutor"      "$PI_HOME/extensions/tutor"
+  ln -sfn "$REPO/extensions/sources"    "$PI_HOME/extensions/sources"
   # The extensions import shared modules by relative path; symlink it too so the
   # tree resolves the same way it does in the repo.
   ln -sfn "$REPO/extensions/shared"     "$PI_HOME/extensions/shared"

@@ -33,7 +33,8 @@
     "extensions": [
       "extensions/quiz/index.ts",
       "extensions/md-log/index.ts",
-      "extensions/tutor/index.ts"
+      "extensions/tutor/index.ts",
+      "extensions/sources/index.ts"
     ],
     "skills": [
       "skills"
