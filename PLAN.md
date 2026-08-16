@@ -26,15 +26,17 @@ planning, finding resources, or verifying facts.
 ## Milestones
 
 ### M0 — Harness up
-- [ ] Install pi: `curl -fsSL https://pi.dev/install.sh | sh`
-- [ ] Configure your model provider (any OpenAI-SDK-compatible endpoint works)
-- [ ] Confirm a plain session runs and a tool call works
+- [x] Install pi: `npm install -g --ignore-scripts @earendil-works/pi-coding-agent`
+- [x] Confirm a session runs and a tool call works — `npm run smoke` does this with
+      a scripted provider, so it needs no key
+- [ ] Configure your model provider (`/login`, or any OpenAI-SDK-compatible endpoint)
 - [ ] Record the actual per-token cost of one throwaway session — this sets the
       budget for everything below
 
 **Done when:** you can `pi` into a session and it answers.
 
-*Status: yours to do — it depends on your provider and your keys.*
+*Status: the harness half is verified and covered by CI. The provider half is
+yours — it depends on your account and your keys.*
 
 ### M1 — The quiz tool  ← *highest leverage, built first*
 - [x] `extensions/quiz/index.ts` registers a `quiz` tool

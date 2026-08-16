@@ -25,6 +25,7 @@
   ],
   "scripts": {
     "test": "node --test",
+    "smoke": "./dev/smoke.sh",
     "typecheck": "tsc --noEmit",
     "lint": "npm run typecheck && shellcheck install.sh uninstall.sh skills/teach/scripts/log-answer.sh"
   },

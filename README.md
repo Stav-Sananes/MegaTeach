@@ -146,7 +146,13 @@ so the two harnesses share one map. See the *Harness adaptation* table in
 npm install
 npm test          # node's test runner, no build step
 npm run typecheck # tsc against the real pi types
+npm run smoke     # drives a real pi session with a scripted provider — no model, no API key
 ```
+
+`npm test` proves the tools behave when called directly. `npm run smoke` proves
+pi actually loads the package, registers the tools, validates arguments against
+the schemas, and routes results back — including spawning a real subagent
+process. It needs pi on your PATH and skips cleanly if it is missing.
 
 ## Credit
 

@@ -6,17 +6,18 @@ import { test } from "node:test";
 import { loadPhilosophy, philosophyBlock } from "../extensions/shared/philosophy.ts";
 import { readLink, resolveNotePath, shortPath, writeLink } from "../extensions/shared/link.ts";
 
-function withTempDir<T>(fn: (dir: string) => T): T {
+/** Await the body before cleaning up — an async body outliving its own directory is a silent test.  */
+async function withTempDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
   const dir = mkdtempSync(join(tmpdir(), "megateach-phil-"));
   try {
-    return fn(dir);
+    return await fn(dir);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
-test("a project PHILOSOPHY.md is found and returned", () => {
-  withTempDir((dir) => {
+test("a project PHILOSOPHY.md is found and returned", async () => {
+  await withTempDir((dir) => {
     writeFileSync(join(dir, "PHILOSOPHY.md"), "Derive, never assert.\n");
     const result = loadPhilosophy(dir);
     assert.equal(result.found, true);
@@ -25,15 +26,15 @@ test("a project PHILOSOPHY.md is found and returned", () => {
   });
 });
 
-test("an empty PHILOSOPHY.md counts as absent — a blank file is not a philosophy", () => {
-  withTempDir((dir) => {
+test("an empty PHILOSOPHY.md counts as absent — a blank file is not a philosophy", async () => {
+  await withTempDir((dir) => {
     writeFileSync(join(dir, "PHILOSOPHY.md"), "   \n\n");
     assert.equal(loadPhilosophy(dir).found, false);
   });
 });
 
-test("the project root wins over .teach/", () => {
-  withTempDir((dir) => {
+test("the project root wins over .teach/", async () => {
+  await withTempDir((dir) => {
     mkdirSync(join(dir, ".teach"), { recursive: true });
     writeFileSync(join(dir, ".teach", "PHILOSOPHY.md"), "fallback");
     writeFileSync(join(dir, "PHILOSOPHY.md"), "project");
@@ -41,16 +42,16 @@ test("the project root wins over .teach/", () => {
   });
 });
 
-test("the missing-philosophy block tells the model to say so out loud", () => {
-  withTempDir((dir) => {
+test("the missing-philosophy block tells the model to say so out loud", async () => {
+  await withTempDir((dir) => {
     const block = philosophyBlock(loadPhilosophy(dir));
     assert.match(block, /Say so in your first message/);
     assert.match(block, /\/philosophy/);
   });
 });
 
-test("link state round-trips and survives a new session", () => {
-  withTempDir((dir) => {
+test("link state round-trips and survives a new session", async () => {
+  await withTempDir((dir) => {
     const note = join(dir, "note.md");
     writeFileSync(note, "");
     writeLink(dir, note);
@@ -58,8 +59,8 @@ test("link state round-trips and survives a new session", () => {
   });
 });
 
-test("a link to a file that no longer exists reads as no link", () => {
-  withTempDir((dir) => {
+test("a link to a file that no longer exists reads as no link", async () => {
+  await withTempDir((dir) => {
     const note = join(dir, "note.md");
     writeFileSync(note, "");
     writeLink(dir, note);

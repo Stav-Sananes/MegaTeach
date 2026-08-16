@@ -60,10 +60,11 @@ const QUESTION = {
   rationale: "A 1-form is a linear map from vectors to scalars.",
 };
 
-function withTempDir<T>(fn: (dir: string) => T): T {
+/** Await the body before cleaning up — an async body outliving its own directory is a silent test.  */
+async function withTempDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
   const dir = mkdtempSync(join(tmpdir(), "megateach-quiz-"));
   try {
-    return fn(dir);
+    return await fn(dir);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -34,17 +34,18 @@ function attempt(over: Partial<ProbeAttempt> = {}): ProbeAttempt {
   };
 }
 
-function withTempDir<T>(fn: (dir: string) => T): T {
+/** Await the body before cleaning up — an async body outliving its own directory is a silent test.  */
+async function withTempDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
   const dir = mkdtempSync(join(tmpdir(), "megateach-"));
   try {
-    return fn(dir);
+    return await fn(dir);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
-test("append then read round-trips an attempt", () => {
-  withTempDir((dir) => {
+test("append then read round-trips an attempt", async () => {
+  await withTempDir((dir) => {
     assert.equal(appendAttempt(dir, attempt({ strand: "algebra/groups" })), true);
     const read = readAttempts(dir);
     assert.equal(read.length, 1);
@@ -54,8 +55,8 @@ test("append then read round-trips an attempt", () => {
   });
 });
 
-test("reading a missing log yields no attempts rather than throwing", () => {
-  withTempDir((dir) => {
+test("reading a missing log yields no attempts rather than throwing", async () => {
+  await withTempDir((dir) => {
     assert.deepEqual(readAttempts(dir), []);
   });
 });

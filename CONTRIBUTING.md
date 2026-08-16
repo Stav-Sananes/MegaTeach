@@ -23,7 +23,15 @@ Improvements to *mechanism* are very welcome:
 npm install
 npm test           # node --test, no build step
 npm run typecheck  # tsc --noEmit against the real pi types
+npm run smoke      # a real pi session driven by a scripted provider
 ```
+
+`npm run smoke` needs pi installed (`npm install -g --ignore-scripts
+@earendil-works/pi-coding-agent`) and skips cleanly without it. It registers a
+faux provider whose responses are scripted in `dev/smoke-faux.ts`, so a full
+session runs with no model and no API key. Add a step there whenever you add a
+tool: unit tests cannot catch a schema the harness rejects or a result that never
+makes it back to the model.
 
 Node ≥ 22.6 (the tests import `.ts` directly and rely on native type stripping).
 pi loads the extensions through jiti, so there is nothing to compile at runtime.

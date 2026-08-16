@@ -14,10 +14,11 @@ import { readAttempts, summarize, verdict } from "../extensions/shared/probe-log
 
 const SCRIPT = fileURLToPath(new URL("../skills/teach/scripts/log-answer.sh", import.meta.url));
 
-function withTempDir<T>(fn: (dir: string) => T): T {
+/** Await the body before cleaning up — an async body outliving its own directory is a silent test.  */
+async function withTempDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
   const dir = mkdtempSync(join(tmpdir(), "megateach-sh-"));
   try {
-    return fn(dir);
+    return await fn(dir);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -27,8 +28,8 @@ function log(dir: string, args: string[]): void {
   execFileSync("bash", [SCRIPT, ...args], { cwd: dir, encoding: "utf8" });
 }
 
-test("log-answer.sh writes lines the TypeScript parser accepts", () => {
-  withTempDir((dir) => {
+test("log-answer.sh writes lines the TypeScript parser accepts", async () => {
+  await withTempDir((dir) => {
     log(dir, ["calculus/limits", "correct", "What is a limit?"]);
     log(dir, ["calculus/limits", "wrong", "Epsilon-delta?", "teach"]);
     log(dir, ["algebra/groups", "unknown", "What is a coset?"]);
@@ -50,8 +51,8 @@ test("log-answer.sh writes lines the TypeScript parser accepts", () => {
   });
 });
 
-test("log-answer.sh escapes quotes, backslashes, and newlines in the question", () => {
-  withTempDir((dir) => {
+test("log-answer.sh escapes quotes, backslashes, and newlines in the question", async () => {
+  await withTempDir((dir) => {
     log(dir, ["notation", "correct", 'Does \\alpha mean "first"?\nSecond line.']);
     const attempts = readAttempts(dir);
     assert.equal(attempts.length, 1, "an unescaped quote would have produced an unparseable line");
@@ -59,8 +60,8 @@ test("log-answer.sh escapes quotes, backslashes, and newlines in the question", 
   });
 });
 
-test("log-answer.sh rejects an unknown result rather than logging a wrong measurement", () => {
-  withTempDir((dir) => {
+test("log-answer.sh rejects an unknown result rather than logging a wrong measurement", async () => {
+  await withTempDir((dir) => {
     assert.throws(() => log(dir, ["strand", "maybe", "q"]));
     assert.deepEqual(readAttempts(dir), []);
   });

@@ -20,11 +20,23 @@ jobs:
       - run: npm test
       - run: npm run typecheck
 
+  smoke:
+    # Drives a real pi session with a scripted provider — no model, no API key.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+      - run: npm install
+      - run: npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+      - run: npm run smoke
+
   shell:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
-        run: shellcheck install.sh uninstall.sh skills/teach/scripts/log-answer.sh
+        run: shellcheck install.sh uninstall.sh skills/teach/scripts/log-answer.sh dev/smoke.sh
       - name: the installer must not be broken by a syntax error
-        run: bash -n install.sh uninstall.sh
+        run: bash -n install.sh uninstall.sh dev/smoke.sh
