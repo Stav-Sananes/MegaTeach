@@ -16,6 +16,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      # Without an extractor the PDF tests skip themselves, and the extraction
+      # ladder — the part most likely to rot — would never actually run in CI.
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - run: npm install
       - run: npm test
       - run: npm run typecheck
