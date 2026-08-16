@@ -11,6 +11,9 @@ Built for the [pi](https://pi.dev) harness. The skill follows the
 [Agent Skills](https://agentskills.io/specification) standard, so it loads in
 Claude Code and other skill-aware harnesses too.
 
+📖 **[Read the usage guide](GUIDE.md)** — how to get real teaching out of this
+rather than a chatbot with extra steps.
+
 ---
 
 ## Why
@@ -156,6 +159,7 @@ one question instead of building on it.
 | `extensions/shared/` | Probe log, philosophy, link state, retrieval — all unit tested |
 | `agents/` | Subagent definitions: `svg-maker`, `mermaid-maker`, `fact-checker` |
 | `PHILOSOPHY.example.md` | Template for the fork point |
+| `GUIDE.md` | How to actually use it well |
 | `PLAN.md` | Build roadmap and what is still open |
 
 ## Subagents
