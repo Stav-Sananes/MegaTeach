@@ -91,18 +91,18 @@ lesson with mathematics and diagrams intact.
 |---|---|
 | `/teach <topic>` | Start a session: loads your philosophy, prior map, and sources, then probes |
 | `/link <path>` | Point the session at a markdown file it writes lessons into |
-| `/source add <path>` | Add your own material — PDFs, notes, a whole course directory |
+| `/source add <path>` | Add your own material — PDFs, Word files, notes, a whole course directory |
 | `/probe` | Show your measured map — per strand, with staleness |
 | `/philosophy` | Show your PHILOSOPHY.md, or scaffold one |
 
 ## Teach from your own material
 
-Point it at your course PDF, your lecture notes, your professor's problem sets:
+Point it at your course PDF, your lecturer's Word handouts, your problem sets:
 
 ```
 /source add ~/course/lectures/          # a file, or a whole directory
 /source list                            # what's in the library
-/source doctor                          # which PDF extractors this machine has
+/source doctor                          # which extractors this machine has, per format
 /teach stokes' theorem
 ```
 
@@ -117,13 +117,23 @@ API, no vector database, no key, no network.** The trade is that matching is
 keyword-based rather than semantic, so the tutor issues several queries with
 different phrasings — cheap, because searching costs nothing.
 
-PDFs need one text extractor. `/source doctor` tells you what you have:
+PDFs and Word files each go down a ladder of extractors. `/source doctor` reports
+both, per format:
 
 ```bash
-brew install poppler          # macOS — pdftotext, the best output
+brew install poppler          # macOS — pdftotext, the best PDF output
 apt install poppler-utils     # Debian/Ubuntu
 python3 -m pip install pypdf  # no system package needed
+
+brew install pandoc           # best .docx output — keeps tables and headings
 ```
+
+**Word needs no install at all** in practice: a `.docx` is a zip of XML, so the
+bottom rung reads it with nothing but stock `python3`. macOS also ships
+`textutil`. Pages come from explicit and last-rendered page breaks, so
+`[handout.docx p.2]` means page 2 — and a document with no breaks is cited
+without a page rather than with an invented one. Legacy `.doc` is not a zip and
+is rejected with the command to convert it.
 
 `.md` and `.txt` sources need none of this. Scanned PDFs with no text layer are
 reported as such rather than ingested empty.
@@ -168,7 +178,7 @@ one question instead of building on it.
 | `extensions/quiz/` | `quiz` + `recall` tools, `/probe` command |
 | `extensions/md-log/` | `/link` command and `note` tool |
 | `extensions/tutor/` | `/teach`, `/philosophy`, and the `delegate` subagent runner |
-| `extensions/sources/` | `/source`, `source_search`, `source_read`, and the PDF extraction ladder |
+| `extensions/sources/` | `/source`, `source_search`, `source_read`, and the PDF/DOCX extraction ladders |
 | `extensions/shared/` | Probe log, philosophy, link state, retrieval — all unit tested |
 | `bin/teach-sources.ts` | The source library over `argv` — no harness, no model, no key |
 | `agents/` | Subagent definitions: `svg-maker`, `mermaid-maker`, `fact-checker` |

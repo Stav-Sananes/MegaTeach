@@ -29,7 +29,7 @@ import {
   textPath,
   writeManifest,
 } from "../shared/sources.ts";
-import { NoExtractorError, availableExtractors } from "./extract.ts";
+import { NoExtractorError, extractorReport } from "./extract.ts";
 import { ingest, libraryLines } from "./ingest.ts";
 
 export default function sourcesExtension(pi: ExtensionAPI) {
@@ -52,12 +52,14 @@ export default function sourcesExtension(pi: ExtensionAPI) {
       }
 
       if (action === "doctor") {
-        const found = availableExtractors();
         ctx.ui.setWidget("teach-sources", [
-          "PDF extractors on this machine:",
-          ...(found.length > 0
-            ? found.map((f) => `  ${f}`)
-            : ["  none — install poppler, mupdf-tools, or pypdf to add PDFs", "  .md and .txt sources work regardless"]),
+          "Extractors on this machine:",
+          ...extractorReport().flatMap(({ format, rungs }) =>
+            rungs.length > 0
+              ? [`  ${format}:  ${rungs.join(", ")}`]
+              : [`  ${format}:  none — ${format === "pdf" ? "install poppler, mupdf-tools, or pypdf" : "install pandoc"}`],
+          ),
+          "  .md and .txt need no extractor and work regardless",
         ]);
         return;
       }
@@ -120,11 +122,11 @@ export default function sourcesExtension(pi: ExtensionAPI) {
     name: "source_search",
     label: "Search sources",
     description:
-      "Search the learner's own material — their PDFs, lecture notes, and textbooks — for passages relevant " +
+      "Search the learner's own material — their PDFs, Word handouts, lecture notes, and textbooks — for passages relevant " +
       "to a query. Returns ranked passages, each with a citation and a chunk id. Matching is keyword-based, " +
       "not semantic: use the words the source itself would use, and issue several queries with different " +
       "phrasings rather than one. Searching is local and free.",
-    promptSnippet: "source_search - find passages in the learner's own PDFs and notes",
+    promptSnippet: "source_search - find passages in the learner's own PDFs, Word files, and notes",
     promptGuidelines: [
       "Call source_search before teaching any concept the learner has sources for, so the lesson matches their material's notation and conventions.",
       "Cite what source_search returns using the bracketed citation exactly as given; never paraphrase the learner's own source without saying where it came from.",

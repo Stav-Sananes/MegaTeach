@@ -155,9 +155,9 @@ This is what turns a good generic explanation into one that is useful for *your*
 course.
 
 ```
-/source add ~/course/lectures/     # a file, or a whole directory
+/source add ~/course/lectures/     # a file, or a whole directory (.pdf .docx .md .txt)
 /source list                       # what's in the library
-/source doctor                     # which PDF extractors this machine has
+/source doctor                     # which extractors this machine has, per format
 /source remove lecture-3           # take one back out
 ```
 
@@ -180,16 +180,40 @@ quietly make a correct explanation useless to you. Concretely:
 > tutor compensates by issuing several queries with different phrasings.
 
 <details>
-<summary>PDF support: what to install</summary>
+<summary>PDF and Word support: what to install</summary>
 
-`.md` and `.txt` sources need nothing. PDFs need one of these — `/source doctor`
-tells you what you already have:
+`.md` and `.txt` sources need nothing. `/source doctor` reports what you have for
+the two binary formats:
 
 ```bash
+# PDF
 brew install poppler          # macOS — pdftotext, the best output
 apt install poppler-utils     # Debian/Ubuntu
 brew install mupdf-tools      # alternative
 python3 -m pip install pypdf  # no system package needed
+
+# Word (.docx)
+brew install pandoc           # best structure — keeps tables and headings
+apt install pandoc            # Debian/Ubuntu
+```
+
+**Word usually needs nothing.** A `.docx` is a zip of XML, so the last rung reads
+it with stock `python3` and no pip install; macOS also ships `textutil`. Install
+pandoc only if tables and heading structure matter to you.
+
+One honest limitation on Word: a `.docx` has no inherent pages — pagination
+happens when it is rendered, and depends on the reader's font and paper size.
+Pages are taken from explicit page breaks the author inserted and from the marks
+Word leaves where its own layout engine last broke the page. A document with
+neither becomes one page and is cited as `[handout.docx]`, with no page number,
+rather than with a fabricated one.
+
+Legacy `.doc` is a different, non-zip format. It is rejected with the command to
+convert it rather than read as mojibake:
+
+```bash
+textutil -convert docx old.doc                      # macOS
+libreoffice --headless --convert-to docx old.doc
 ```
 
 A scanned PDF with no text layer is reported as such rather than ingested empty —
@@ -206,7 +230,7 @@ if you see that, you need OCR before this can read it.
 SRC=~/.claude/skills/teach/scripts/sources.sh   # or <repo>/bin/teach-sources.ts
 
 $SRC doctor
-$SRC add ~/course/lectures/
+$SRC add ~/course/lectures/       # .pdf .docx .md .txt
 $SRC list
 $SRC search "exterior derivative" --limit 5
 $SRC read lecture-3#12 --context 2

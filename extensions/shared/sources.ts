@@ -288,7 +288,7 @@ export function formatHits(hits: readonly SearchHit[], manifest: Manifest): stri
 }
 
 /** Files worth trying to ingest when the learner points at a directory. */
-export const SUPPORTED_EXTENSIONS = [".pdf", ".md", ".markdown", ".txt", ".text", ".org", ".rst"];
+export const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".md", ".markdown", ".txt", ".text", ".org", ".rst"];
 
 export function collectFiles(path: string, isDirectory: boolean): string[] {
   if (!isDirectory) return [path];

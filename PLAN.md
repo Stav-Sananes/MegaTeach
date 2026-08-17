@@ -104,6 +104,12 @@ The SVG loop depends on the model having vision.
 - [x] PDF extraction ladder: pdftotext → mutool → python3+pypdf, every rung emitting
       page breaks so citations stay page-exact; `/source doctor` reports what a
       machine has
+- [x] DOCX ladder: pandoc → textutil → python3 stdlib. Word support needs no
+      install, because a .docx is a zip of XML. Pages come from explicit and
+      last-rendered breaks; a document with neither is cited without a page
+      rather than with an invented one. Legacy .doc is rejected with the
+      conversion command, and a non-zip .docx is caught before a lenient rung
+      can ingest it as garbage
 - [x] BM25 retrieval over page-attributed chunks, computed locally — no embedding
       API, no vector store, no key, no network
 - [x] `source_search` and `source_read` tools; chunks never span a page

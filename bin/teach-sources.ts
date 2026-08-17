@@ -16,10 +16,10 @@
  *     session on it.
  *
  * Usage:
- *   teach-sources add <path>...      add files or directories
+ *   teach-sources add <path>...      add files or directories (.pdf, .docx, .md, .txt)
  *   teach-sources list               what is in the library
  *   teach-sources remove <id>        drop one document
- *   teach-sources doctor             which PDF extractors this machine has
+ *   teach-sources doctor             which extractors this machine has, per format
  *   teach-sources search <query>     ranked passages, with citations
  *   teach-sources read <chunk-id>    one passage and its neighbours, in full
  *
@@ -43,15 +43,15 @@ import {
   textPath,
   writeManifest,
 } from "../extensions/shared/sources.ts";
-import { availableExtractors } from "../extensions/sources/extract.ts";
+import { extractorReport } from "../extensions/sources/extract.ts";
 import { ingest, libraryLines } from "./../extensions/sources/ingest.ts";
 
 const USAGE = `teach-sources — the learner's own material, searchable with no model and no key.
 
-  teach-sources add <path>...     add files or directories (.pdf .md .txt .org .rst)
+  teach-sources add <path>...     add files or directories (.pdf .docx .md .txt .org .rst)
   teach-sources list              what is in the library
   teach-sources remove <id>       drop one document
-  teach-sources doctor            which PDF extractors this machine has
+  teach-sources doctor            which extractors this machine has, per format
   teach-sources search <query>    ranked passages, each with a turnable citation
   teach-sources read <chunk-id>   one passage and its neighbours, in full
 
@@ -174,25 +174,32 @@ function cmdRemove(options: Options): number {
   return 0;
 }
 
+const DOCTOR_HINTS: Record<string, string[]> = {
+  pdf: [
+    "    brew install poppler          # macOS, best output",
+    "    apt install poppler-utils     # Debian/Ubuntu",
+    "    python3 -m pip install pypdf  # no system package needed",
+  ],
+  docx: [
+    "    brew install pandoc           # macOS, best structure",
+    "    apt install pandoc            # Debian/Ubuntu",
+    "    (any python3 reads .docx unaided — check that python3 is on PATH)",
+  ],
+};
+
 function cmdDoctor(options: Options): number {
-  const found = availableExtractors();
-  emit(
-    options,
-    [
-      "PDF extractors on this machine:",
-      ...(found.length > 0
-        ? found.map((f) => `  ${f}`)
-        : [
-            "  none — install one of:",
-            "    brew install poppler          # macOS, best output",
-            "    apt install poppler-utils     # Debian/Ubuntu",
-            "    python3 -m pip install pypdf  # no system package needed",
-            "  .md and .txt sources work regardless",
-          ]),
-    ],
-    { extractors: found },
-  );
-  return found.length > 0 ? 0 : 1;
+  const report = extractorReport();
+  const lines = ["Extractors on this machine:"];
+  for (const { format, rungs } of report) {
+    if (rungs.length > 0) lines.push(`  ${format}:  ${rungs.join(", ")}`);
+    else lines.push(`  ${format}:  none — install one of:`, ...(DOCTOR_HINTS[format] ?? []));
+  }
+  lines.push("  .md and .txt need no extractor and work regardless");
+  emit(options, lines, { extractors: report });
+
+  // Non-zero only when *nothing* works, so a machine that reads PDFs but not
+  // Word is not reported as broken.
+  return report.some(({ rungs }) => rungs.length > 0) ? 0 : 1;
 }
 
 function cmdSearch(options: Options): number {

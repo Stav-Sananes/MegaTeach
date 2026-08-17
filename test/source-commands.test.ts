@@ -150,12 +150,19 @@ test("/source remove takes the document out of retrieval, not just out of the li
   });
 });
 
-test("/source doctor names the extractors this machine actually has", async () => {
+test("/source doctor names the extractors this machine actually has, per format", async () => {
   await withTempDir(async (dir) => {
     const { commands } = harness();
     const { ctx, widgets } = context(dir);
     await commands.get("source").handler("doctor", ctx);
-    assert.match(widgets.get("teach-sources")![0]!, /PDF extractors/);
+
+    const lines = widgets.get("teach-sources")!;
+    assert.match(lines[0]!, /Extractors on this machine/);
+    // Both formats are always reported, present or not — a learner with a Word
+    // handout needs to know that PDFs working says nothing about .docx working.
+    assert.ok(lines.some((l) => /^\s+pdf:/.test(l)), "pdf line present");
+    assert.ok(lines.some((l) => /^\s+docx:/.test(l)), "docx line present");
+    assert.ok(lines.some((l) => /\.md and \.txt/.test(l)), "plain text noted as needing nothing");
   });
 });
 

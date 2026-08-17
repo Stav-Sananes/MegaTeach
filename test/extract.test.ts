@@ -12,8 +12,12 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { availableExtractors, extract, extractPdf } from "../extensions/sources/extract.ts";
+import { fileURLToPath } from "node:url";
+import { availableExtractors, extract, extractDocx, extractPdf, extractorReport } from "../extensions/sources/extract.ts";
 import { chunkDocument } from "../extensions/shared/sources.ts";
+
+/** Where the extraction helper scripts live, for the test that drives one directly. */
+const HERE_SOURCES = fileURLToPath(new URL("../extensions/sources", import.meta.url));
 
 async function withTempDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
   const dir = mkdtempSync(join(tmpdir(), "megateach-extract-"));
@@ -118,7 +122,127 @@ test("a PDF with no text layer is reported, not ingested as an empty document", 
 test("the extractor list is honest about what this machine can do", () => {
   // Drives /source doctor. Names must match the ladder's rung names so the
   // learner can act on them.
+  const known = ["pdftotext", "mutool", "python3+pypdf", "pandoc", "textutil", "python3+zipfile"];
   for (const name of availableExtractors()) {
-    assert.ok(["pdftotext", "mutool", "python3+pypdf"].includes(name), `unknown rung: ${name}`);
+    assert.ok(known.includes(name), `unknown rung: ${name}`);
   }
+
+  // doctor reports per format, and must not claim a format works when no rung does.
+  const report = extractorReport();
+  assert.deepEqual(
+    report.map((r) => r.format),
+    ["pdf", "docx"],
+  );
+  for (const { rungs } of report) {
+    for (const name of rungs) assert.ok(availableExtractors().includes(name));
+  }
+});
+
+/**
+ * A .docx is a zip of XML, so this builds a genuine one rather than mocking the
+ * extractor. Two pages via an explicit page break, and a table — both are things
+ * a course handout actually contains, and both have failed silently before:
+ * a lost page break makes every citation point to page 1, and a table flattened
+ * without separators becomes one unsearchable blob.
+ */
+function makeDocx(dir: string, name = "handout.docx"): string {
+  const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
+<w:p><w:r><w:t>PAGEONEMARKER the exterior derivative takes a k-form to a k+1 form</w:t></w:r></w:p>
+<w:p><w:r><w:br w:type="page"/></w:r></w:p>
+<w:p><w:r><w:t>PAGETWOMARKER Stokes theorem equates two integrals</w:t></w:r></w:p>
+<w:tbl>
+<w:tr><w:tc><w:p><w:r><w:t>TABLEHEADCELL</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>TABLETAILCELL</w:t></w:r></w:p></w:tc></w:tr>
+</w:tbl>
+</w:body></w:document>`;
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+
+  const path = join(dir, name);
+  const script = join(dir, "make-docx.py");
+  writeFileSync(
+    script,
+    [
+      "import sys, zipfile",
+      "path, doc, ct, rels = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]",
+      "z = zipfile.ZipFile(path, 'w')",
+      "z.writestr('[Content_Types].xml', ct)",
+      "z.writestr('_rels/.rels', rels)",
+      "z.writestr('word/document.xml', doc)",
+      "z.close()",
+    ].join("\n"),
+    "utf8",
+  );
+  execFileSync("python3", [script, path, document, contentTypes, rels], { stdio: "ignore" });
+  return path;
+}
+
+test("a .docx round-trips to text with its page breaks intact", async (t) => {
+  if (!have("python3")) {
+    t.skip("no python3 to build a .docx with");
+    return;
+  }
+  await withTempDir((dir) => {
+    const path = makeDocx(dir);
+    const { text, extractedBy } = extractDocx(path);
+    assert.ok(
+      ["pandoc", "textutil", "python3+zipfile"].includes(extractedBy),
+      `unexpected extractor: ${extractedBy}`,
+    );
+    assert.match(text, /PAGEONEMARKER/);
+    assert.match(text, /PAGETWOMARKER/);
+
+    const chunks = chunkDocument("doc", text);
+    const first = chunks.find((c) => c.text.includes("PAGEONEMARKER"));
+    const second = chunks.find((c) => c.text.includes("PAGETWOMARKER"));
+    assert.ok(first && second, "both markers survived chunking");
+    assert.ok(second.page > first.page, `expected distinct pages, got ${first.page} and ${second.page}`);
+  });
+});
+
+test("the stdlib rung needs no install, and keeps table cells separable", async (t) => {
+  if (!have("python3")) {
+    t.skip("no python3 on this machine");
+    return;
+  }
+  await withTempDir((dir) => {
+    const path = makeDocx(dir);
+    // Bypass the ladder and drive the bottom rung directly: it is the one that
+    // has to work on a machine with neither pandoc nor textutil, which is most
+    // Linux boxes and every CI runner.
+    const script = join(HERE_SOURCES, "extract_docx.py");
+    const text = execFileSync("python3", [script, path], { encoding: "utf8" });
+
+    assert.match(text, /PAGEONEMARKER/);
+    assert.equal(text.split("\f").length, 2, "the explicit page break became a form feed");
+    // Cells separated, not concatenated — otherwise a query for one column's term
+    // matches a chunk whose other columns are noise.
+    assert.match(text, /TABLEHEADCELL\tTABLETAILCELL/);
+  });
+});
+
+test("extract dispatches by extension, and says what to do about legacy .doc", async () => {
+  await withTempDir((dir) => {
+    const doc = join(dir, "old.doc");
+    writeFileSync(doc, "\xd0\xcf\x11\xe0 legacy binary");
+    // Silently producing mojibake would poison the library with plausible noise.
+    assert.throws(() => extract(doc), /legacy \.doc format/);
+    assert.throws(() => extract(doc), /convert-to docx|textutil -convert/);
+  });
+});
+
+test("a .docx that is not really a zip is reported, not ingested empty", async (t) => {
+  if (extractorReport().find((r) => r.format === "docx")?.rungs.length === 0) {
+    t.skip("no docx extractor on this machine");
+    return;
+  }
+  await withTempDir((dir) => {
+    const fake = join(dir, "broken.docx");
+    writeFileSync(fake, "this is not a zip archive");
+    assert.throws(() => extractDocx(fake), /not a valid \.docx/);
+    // Named the fix, not just the failure.
+    assert.throws(() => extractDocx(fake), /convert-to docx|textutil -convert/);
+  });
 });
