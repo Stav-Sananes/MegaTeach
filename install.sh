@@ -56,7 +56,10 @@ install_pi() {
 }
 
 install_claude() {
-  echo "Linking the teach skill and agents into $CLAUDE_HOME…"
+  # Braces are load-bearing: bash resolves $VAR followed by a multibyte character
+  # as a single identifier under some locales, so "$CLAUDE_HOME…" expands nothing
+  # and set -u aborts the install.
+  echo "Linking the teach skill and agents into ${CLAUDE_HOME}…"
   mkdir -p "$CLAUDE_HOME/skills" "$CLAUDE_HOME/agents"
   ln -sfn "$REPO/skills/teach" "$CLAUDE_HOME/skills/teach"
   for agent in "$REPO"/agents/*.md; do

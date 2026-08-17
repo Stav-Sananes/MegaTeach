@@ -30,9 +30,14 @@ export interface Extraction {
   extractedBy: string;
 }
 
+// `command -v` is a shell builtin, so this needs a shell — but spawning one via
+// the `shell` option concatenates argv into the command string, which Node warns
+// about (DEP0190) on every ingest. Invoking sh directly with an explicit -c keeps
+// the argument vector intact and the output quiet. Callers only ever pass the
+// hardcoded rung names below, never a learner-supplied path.
 function available(command: string): boolean {
   try {
-    execFileSync("command", ["-v", command], { shell: "/bin/sh", stdio: "ignore" });
+    execFileSync("/bin/sh", ["-c", `command -v "$1"`, "sh", command], { stdio: "ignore" });
     return true;
   } catch {
     return false;

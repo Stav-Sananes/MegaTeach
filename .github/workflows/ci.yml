@@ -40,6 +40,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
-        run: shellcheck install.sh uninstall.sh skills/teach/scripts/log-answer.sh dev/smoke.sh
+        run: shellcheck install.sh uninstall.sh skills/teach/scripts/log-answer.sh skills/teach/scripts/sources.sh dev/smoke.sh
       - name: the installer must not be broken by a syntax error
-        run: bash -n install.sh uninstall.sh dev/smoke.sh
+        run: bash -n install.sh uninstall.sh dev/smoke.sh skills/teach/scripts/sources.sh

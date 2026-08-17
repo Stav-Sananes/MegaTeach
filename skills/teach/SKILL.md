@@ -153,7 +153,25 @@ is unchanged either way; only the mechanism differs.
 | Prior measurements | `recall` tool | Read `.teach/probe-log.jsonl` |
 | Durable lesson file | `note` tool after `/link` | `Write`/`Edit` to the file the learner names |
 | Isolated subagent | `delegate` tool | `Task`/`Agent` tool with the definitions in `agents/` |
-| The learner's sources | `source_search` / `source_read` | `Grep` over `.teach/sources/*.txt`, citing `<doc-id> p.N` |
+| The learner's sources | `source_search` / `source_read` | `<this-skill-dir>/scripts/sources.sh` — same retrieval, same citations |
+
+Without `source_search`, reach the library through that script rather than
+grepping the extracted text. It runs the identical BM25 index and returns the
+identical citations, so a lesson does not change its account of the learner's
+textbook when it moves between harnesses — and `p.N` comes out right, which grep
+cannot do. Use the absolute path of the directory you read this SKILL.md from,
+for the same reason as `log-answer.sh` below:
+
+```bash
+<this-skill-dir>/scripts/sources.sh list                        # is there a library at all?
+<this-skill-dir>/scripts/sources.sh search "<query>" --limit 5
+<this-skill-dir>/scripts/sources.sh read <chunk-id>
+```
+
+Add `--dir <project>` when the learner's `.teach/` is not under the working
+directory, and `--json` when you want to parse rather than read. If the script
+will not run, fall back to `Grep` over `.teach/sources/*.txt` and cite the
+document without a page number rather than inventing one.
 
 Note on `quiz` during the probe: it deliberately shows the learner **nothing** —
 not the correct answer, not the rationale. Do not refer back to a reason they have

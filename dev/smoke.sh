@@ -32,7 +32,12 @@ fail() { printf '  FAIL  %s\n' "$1"; failures=$((failures + 1)); }
 # --mode json because plain print mode shows only the final assistant message,
 # and most of what is worth asserting here lives in the tool results.
 run_step() {
+  # -ne disables discovery but keeps explicit -e paths. Without it, a developer
+  # who has run ./install.sh gets the package from settings *and* from -e, and
+  # every tool fails to register with a name conflict — so the smoke suite would
+  # break precisely on the machines that had installed the thing being tested.
   SMOKE_STEP="$1" pi \
+    -ne \
     -e "$REPO" \
     -e "$REPO/dev/smoke-faux.ts" \
     --provider faux --model faux-1 \
