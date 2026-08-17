@@ -188,9 +188,12 @@ test("a .docx round-trips to text with its page breaks intact", async (t) => {
     const path = makeDocx(dir);
     const { text, extractedBy } = extractDocx(path);
     assert.ok(
-      ["pandoc", "textutil", "python3+zipfile"].includes(extractedBy),
+      ["python3+zipfile", "textutil", "pandoc"].includes(extractedBy),
       `unexpected extractor: ${extractedBy}`,
     );
+    // The ladder must prefer a rung that keeps page numbers. If python3 is on the
+    // box, nothing lossier should have been reached for.
+    if (have("python3")) assert.equal(extractedBy, "python3+zipfile");
     assert.match(text, /PAGEONEMARKER/);
     assert.match(text, /PAGETWOMARKER/);
 
@@ -198,7 +201,16 @@ test("a .docx round-trips to text with its page breaks intact", async (t) => {
     const first = chunks.find((c) => c.text.includes("PAGEONEMARKER"));
     const second = chunks.find((c) => c.text.includes("PAGETWOMARKER"));
     assert.ok(first && second, "both markers survived chunking");
-    assert.ok(second.page > first.page, `expected distinct pages, got ${first.page} and ${second.page}`);
+
+    // pandoc discards page breaks, which is exactly why it sits last in the
+    // ladder. Assert the contract rather than the rung: whichever one ran must
+    // either report true distinct pages or report one page — never invent a
+    // second page, and never claim page 1 for content that is on page 2.
+    if (extractedBy === "pandoc") {
+      assert.equal(first.page, second.page, "pandoc collapses to a single page, and must say so");
+    } else {
+      assert.ok(second.page > first.page, `expected distinct pages, got ${first.page} and ${second.page}`);
+    }
   });
 });
 

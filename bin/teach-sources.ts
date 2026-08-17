@@ -181,9 +181,9 @@ const DOCTOR_HINTS: Record<string, string[]> = {
     "    python3 -m pip install pypdf  # no system package needed",
   ],
   docx: [
-    "    brew install pandoc           # macOS, best structure",
-    "    apt install pandoc            # Debian/Ubuntu",
     "    (any python3 reads .docx unaided — check that python3 is on PATH)",
+    "    brew install pandoc           # last-resort rung, loses page numbers",
+    "    apt install pandoc            # Debian/Ubuntu",
   ],
 };
 

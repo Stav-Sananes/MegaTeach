@@ -192,14 +192,15 @@ apt install poppler-utils     # Debian/Ubuntu
 brew install mupdf-tools      # alternative
 python3 -m pip install pypdf  # no system package needed
 
-# Word (.docx)
-brew install pandoc           # best structure — keeps tables and headings
-apt install pandoc            # Debian/Ubuntu
+# Word (.docx) — usually nothing to install
+python3 --version             # a .docx is a zip of XML; stock python3 reads it
 ```
 
-**Word usually needs nothing.** A `.docx` is a zip of XML, so the last rung reads
-it with stock `python3` and no pip install; macOS also ships `textutil`. Install
-pandoc only if tables and heading structure matter to you.
+**Word usually needs nothing.** The first rung is a stdlib Python reader written
+against this project's citation contract; macOS `textutil` is the fallback.
+pandoc is supported but sits *last*, because it produces the nicest-reading text
+and silently discards page breaks — and a citation you cannot turn to is worse
+than prose that reads slightly worse.
 
 One honest limitation on Word: a `.docx` has no inherent pages — pagination
 happens when it is rendered, and depends on the reader's font and paper size.

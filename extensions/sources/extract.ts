@@ -11,11 +11,15 @@
  *   2. mutool draw (mupdf)  — nearly as good
  *   3. python3 + pypdf      — no system package, and python3 is nearly ubiquitous
  *
- * DOCX:
- *   1. pandoc               — best structure, keeps tables and headings readable
- *   2. textutil             — present on every macOS install, nothing to fetch
- *   3. python3 (stdlib)     — a .docx is a zip of XML, so the bottom rung needs
- *                             no pip install at all and almost always runs
+ * DOCX, ordered by fidelity to the citation contract rather than by how nicely
+ * the text reads:
+ *   1. python3 (stdlib)     — a .docx is a zip of XML, so this needs no install
+ *                             at all; written against this contract, so it emits
+ *                             form feeds for page breaks and keeps table cells apart
+ *   2. textutil             — on every macOS install, and preserves page breaks
+ *   3. pandoc               — nicest prose, but discards page breaks, so it runs
+ *                             only when nothing else can and its citations carry
+ *                             no page number
  *
  * Rungs emit `\f` between pages so citations stay page-exact regardless of which
  * one ran. Word is the exception worth knowing about: a .docx has no inherent
@@ -103,25 +107,36 @@ const PDF_LADDER: Rung[] = [
   },
 ];
 
+// Ordered by fidelity to the citation contract, not by prose prettiness. pandoc
+// produces the nicest-reading plain text of the three and is still last, because
+// it silently discards page breaks: a two-page handout comes back as one page and
+// every citation then points at the whole document. Losing a page number is not a
+// cosmetic downgrade — a citation the learner cannot turn to is the failure this
+// whole subsystem exists to avoid.
 const DOCX_LADDER: Rung[] = [
   {
-    name: "pandoc",
-    probe: () => available("pandoc"),
-    // --wrap=none because the chunker splits on blank lines: hard-wrapping at 72
-    // columns turns one paragraph into many, and a definition gets cut in half.
-    extract: (path) => run("pandoc", ["--from=docx", "--to=plain", "--wrap=none", path]),
+    name: "python3+zipfile",
+    // No module argument: a .docx is a zip of XML, so the stdlib is the whole
+    // dependency. This rung is why Word support needs no install step, and it is
+    // first because it is the one written against this contract — it emits form
+    // feeds for both kinds of page break and tab-separates table cells.
+    probe: () => pythonWith(),
+    extract: (path) => run("python3", [PYDOCX_SCRIPT, path]),
   },
   {
     name: "textutil",
+    // macOS ships it, and it preserves page breaks. Fallback for a Mac with no
+    // python3 on PATH.
     probe: () => available("textutil"),
     extract: (path) => run("textutil", ["-convert", "txt", "-stdout", path]),
   },
   {
-    name: "python3+zipfile",
-    // No module argument: a .docx is a zip of XML, so the stdlib is the whole
-    // dependency. This rung is why Word support does not need an install step.
-    probe: () => pythonWith(),
-    extract: (path) => run("python3", [PYDOCX_SCRIPT, path]),
+    name: "pandoc",
+    // Last resort. --wrap=none because the chunker splits on blank lines:
+    // hard-wrapping at 72 columns turns one paragraph into many, and a
+    // definition gets cut in half. Citations from this rung carry no page.
+    probe: () => available("pandoc"),
+    extract: (path) => run("pandoc", ["--from=docx", "--to=plain", "--wrap=none", path]),
   },
 ];
 
@@ -134,9 +149,9 @@ const INSTALL_HINTS: Record<string, string[]> = {
     "  python3 -m pip install pypdf  # no system package needed",
   ],
   docx: [
-    "  brew install pandoc           # macOS — best structure, keeps tables readable",
+    "  (any python3 reads .docx unaided — check that python3 is on PATH)",
+    "  brew install pandoc           # macOS — last-resort rung, loses page numbers",
     "  apt install pandoc            # Debian/Ubuntu",
-    "  (macOS also ships textutil, and any python3 can read .docx unaided)",
   ],
 };
 

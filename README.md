@@ -125,15 +125,15 @@ brew install poppler          # macOS — pdftotext, the best PDF output
 apt install poppler-utils     # Debian/Ubuntu
 python3 -m pip install pypdf  # no system package needed
 
-brew install pandoc           # best .docx output — keeps tables and headings
+# Word needs no install: a .docx is a zip of XML, read with stock python3
 ```
 
-**Word needs no install at all** in practice: a `.docx` is a zip of XML, so the
-bottom rung reads it with nothing but stock `python3`. macOS also ships
-`textutil`. Pages come from explicit and last-rendered page breaks, so
-`[handout.docx p.2]` means page 2 — and a document with no breaks is cited
-without a page rather than with an invented one. Legacy `.doc` is not a zip and
-is rejected with the command to convert it.
+Pages come from explicit and last-rendered page breaks, so `[handout.docx p.2]`
+means page 2 — and a document with no breaks is cited without a page rather than
+with an invented one. The ladder is ordered by *fidelity to that contract*, not
+by prose quality: pandoc reads best but discards page breaks, so it sits last and
+only runs when nothing else can. Legacy `.doc` is not a zip and is rejected with
+the command to convert it.
 
 `.md` and `.txt` sources need none of this. Scanned PDFs with no text layer are
 reported as such rather than ingested empty.
