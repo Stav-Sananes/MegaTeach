@@ -23,20 +23,14 @@ import { LOG_DIR } from "./probe-log.ts";
 export const SOURCES_DIR = "sources";
 export const MANIFEST_FILE = "manifest.json";
 
-/** One ingested document. The extracted text lives beside the manifest as `<id>.txt`. */
 export interface SourceDoc {
-  /** Short stable id derived from the path — also the text filename and the citation key. */
   id: string;
-  /** Human title: the filename unless the learner gave one. */
   title: string;
-  /** Absolute path it came from, so the learner can find the original. */
   path: string;
   addedAt: string;
   pages: number;
   chars: number;
-  /** Of the extracted text, so re-adding an unchanged file is a no-op. */
   hash: string;
-  /** Which rung of the extraction ladder produced the text. Useful when quality is poor. */
   extractedBy: string;
 }
 
@@ -45,7 +39,6 @@ export interface Manifest {
   docs: SourceDoc[];
 }
 
-/** One retrievable unit. Chunks never span a page, so a citation is always exact. */
 export interface Chunk {
   id: string;
   docId: string;
@@ -72,8 +65,6 @@ export function readManifest(cwd: string): Manifest {
     const parsed = JSON.parse(readFileSync(path, "utf8")) as Partial<Manifest>;
     return { version: 1, docs: Array.isArray(parsed.docs) ? parsed.docs : [] };
   } catch {
-    // A corrupt manifest must not make the tutor forget how to teach. The text
-    // files are still on disk and can be re-added.
     return { version: 1, docs: [] };
   }
 }
@@ -83,7 +74,6 @@ export function writeManifest(cwd: string, manifest: Manifest): void {
   writeFileSync(manifestPath(cwd), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 }
 
-/** A filesystem-safe, human-recognisable id: `linear-algebra-notes`, `linear-algebra-notes-2`. */
 export function documentId(path: string, taken: ReadonlySet<string>): string {
   const base = basename(path)
     .replace(/\.[^.]+$/, "")
@@ -106,14 +96,6 @@ export function hashText(text: string): string {
 const TARGET_CHARS = 1200;
 const MIN_CHARS = 200;
 
-/**
- * Split extracted text into retrievable chunks.
- *
- * Page breaks are form feeds, which is what every PDF extractor emits. Chunks are
- * packed from whole paragraphs and never cross a page boundary: a citation the
- * learner cannot turn to in the original is worse than no citation, because it
- * looks checkable and is not.
- */
 export function chunkDocument(docId: string, text: string, targetChars = TARGET_CHARS): Chunk[] {
   const chunks: Chunk[] = [];
   const pages = text.split("\f");
@@ -134,9 +116,6 @@ export function chunkDocument(docId: string, text: string, targetChars = TARGET_
     };
 
     for (const paragraph of paragraphs) {
-      // A single paragraph longer than the target is hard-split rather than
-      // emitted whole: one 40-page-long "paragraph" of OCR soup would otherwise
-      // become one chunk and swamp every ranking it appears in.
       if (paragraph.length > targetChars * 2) {
         flush();
         for (let i = 0; i < paragraph.length; i += targetChars) {
@@ -160,17 +139,6 @@ const STOPWORDS = new Set(
     "will would should could may might must have has had").split(" "),
 );
 
-/**
- * Tokenise for retrieval. Lowercase, split on non-alphanumerics, drop stopwords.
- *
- * Single characters are dropped, which means bare notation (`x`, `L²`, `f'`) is
- * not indexed — only prose is. That is the right trade here: notation varies
- * between sources and renders unreliably through PDF extraction, while the words
- * around it do not. Search "dual space", not "V*".
- *
- * A trailing `s` is stripped so "vectors" finds "vector" — cruder than a stemmer
- * and enough for keyword recall.
- */
 export function tokenize(text: string): string[] {
   const out: string[] = [];
   for (const raw of text.toLowerCase().split(/[^a-z0-9]+/)) {
@@ -184,7 +152,6 @@ export function tokenize(text: string): string[] {
 
 export interface SearchIndex {
   chunks: Chunk[];
-  /** token → chunk index → term frequency */
   postings: Map<string, Map<number, number>>;
   lengths: number[];
   avgLength: number;
@@ -224,7 +191,6 @@ export interface SearchHit {
 const K1 = 1.5;
 const B = 0.75;
 
-/** Okapi BM25. */
 export function search(index: SearchIndex, query: string, limit = 5): SearchHit[] {
   const terms = tokenize(query);
   if (terms.length === 0 || index.chunks.length === 0) return [];
@@ -250,7 +216,6 @@ export function search(index: SearchIndex, query: string, limit = 5): SearchHit[
     .map(([chunkIndex, score]) => ({ chunk: index.chunks[chunkIndex]!, score }));
 }
 
-/** Load every ingested document's chunks. Rebuilt on demand — indexing is cheap next to a lesson. */
 export function loadChunks(cwd: string, manifest = readManifest(cwd)): Chunk[] {
   const chunks: Chunk[] = [];
   for (const doc of manifest.docs) {
@@ -258,21 +223,17 @@ export function loadChunks(cwd: string, manifest = readManifest(cwd)): Chunk[] {
     if (!existsSync(path)) continue;
     try {
       chunks.push(...chunkDocument(doc.id, readFileSync(path, "utf8")));
-    } catch {
-      // Skip an unreadable document rather than losing the rest of the library.
-    }
+    } catch {}
   }
   return chunks;
 }
 
-/** `linear-algebra-notes p.12` — what the learner needs to find the passage themselves. */
 export function citation(chunk: Chunk, manifest: Manifest): string {
   const doc = manifest.docs.find((d) => d.id === chunk.docId);
   const title = doc?.title ?? chunk.docId;
   return doc && doc.pages > 1 ? `${title} p.${chunk.page}` : title;
 }
 
-/** Search results, phrased for the model: citation, chunk id to re-read, then the passage. */
 export function formatHits(hits: readonly SearchHit[], manifest: Manifest): string {
   if (hits.length === 0) {
     return manifest.docs.length === 0
@@ -287,7 +248,6 @@ export function formatHits(hits: readonly SearchHit[], manifest: Manifest): stri
     .join("\n\n---\n\n");
 }
 
-/** Files worth trying to ingest when the learner points at a directory. */
 export const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".md", ".markdown", ".txt", ".text", ".org", ".rst"];
 
 export function collectFiles(path: string, isDirectory: boolean): string[] {

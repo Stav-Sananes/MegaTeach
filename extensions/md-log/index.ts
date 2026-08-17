@@ -68,7 +68,6 @@ export default function mdLogExtension(pi: ExtensionAPI) {
       "Write the plan-phase Mermaid graph and every derivation with LaTeX to the learner's file with note.",
     ],
     parameters: NoteParams,
-    // Appends to one file; serialize so two calls in a batch cannot interleave.
     executionMode: "sequential",
 
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
@@ -79,8 +78,6 @@ export default function mdLogExtension(pi: ExtensionAPI) {
         );
       }
 
-      // Keep exactly one blank line between blocks: a lesson file that has to be
-      // reformatted by hand is a lesson file nobody reopens.
       const existing = (() => {
         try {
           return readFileSync(link.path, "utf8");

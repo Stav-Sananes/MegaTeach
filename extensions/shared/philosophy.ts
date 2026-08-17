@@ -16,20 +16,10 @@ export const PHILOSOPHY_FILE = "PHILOSOPHY.md";
 
 export interface PhilosophyResult {
   found: boolean;
-  /** Absolute path that was used, or the preferred path to create when not found. */
   path: string;
   content: string;
 }
 
-/**
- * Search order: project first, then the user's global config. Project wins so
- * that "how I want to be taught category theory" can differ from "how I want to
- * be taught Rust" without editing one global file back and forth.
- *
- * `home` is injectable so tests can scope the search to a temp directory. Without
- * it, whether the suite passes depends on whether the machine running it happens
- * to have a global PHILOSOPHY.md — which the README tells every user to create.
- */
 export function philosophyCandidates(cwd: string, home: string = homedir()): string[] {
   return [
     join(cwd, PHILOSOPHY_FILE),
@@ -46,14 +36,11 @@ export function loadPhilosophy(cwd: string, home?: string): PhilosophyResult {
     try {
       const content = readFileSync(path, "utf8").trim();
       if (content) return { found: true, path, content };
-    } catch {
-      // Unreadable file behaves as absent — the session should still start.
-    }
+    } catch {}
   }
   return { found: false, path: candidates[0]!, content: "" };
 }
 
-/** What gets handed to the model at the start of a teach session. */
 export function philosophyBlock(result: PhilosophyResult): string {
   if (result.found) {
     return [
@@ -63,9 +50,6 @@ export function philosophyBlock(result: PhilosophyResult): string {
       result.content,
     ].join("\n");
   }
-  // result.path already holds the preferred location for the session's cwd.
-  // Re-deriving it from process.cwd() would name a directory the learner is not
-  // working in, and contradict the path /philosophy would actually write to.
   return [
     `No ${PHILOSOPHY_FILE} was found. The preferred location is ${result.path}.`,
     "Say so in your first message, use the skill's default teaching style, and suggest",

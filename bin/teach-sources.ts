@@ -72,7 +72,6 @@ interface Options {
   rest: string[];
 }
 
-/** `~` is the shell's job, not ours — but argv arrives unexpanded when quoted. */
 function expandPath(cwd: string, input: string): string {
   const unprefixed = input.replace(/^@/, "");
   const expanded = unprefixed.startsWith("~") ? join(homedir(), unprefixed.slice(1)) : unprefixed;
@@ -143,7 +142,6 @@ function cmdAdd(options: Options): number {
     ],
     { added, skipped },
   );
-  // Nothing added and nothing merely unchanged means every file failed to extract.
   return added.length === 0 && skipped.every((s) => !s.reason.includes("unchanged")) ? 1 : 0;
 }
 
@@ -197,8 +195,6 @@ function cmdDoctor(options: Options): number {
   lines.push("  .md and .txt need no extractor and work regardless");
   emit(options, lines, { extractors: report });
 
-  // Non-zero only when *nothing* works, so a machine that reads PDFs but not
-  // Word is not reported as broken.
   return report.some(({ rungs }) => rungs.length > 0) ? 0 : 1;
 }
 
@@ -218,7 +214,6 @@ function cmdSearch(options: Options): number {
     [formatHits(hits, manifest)],
     { query, hits: hits.map((h) => ({ ...h, citation: citation(h.chunk, manifest) })) },
   );
-  // No hits is a real answer — the sources are silent on this — not a failure.
   return 0;
 }
 
@@ -290,7 +285,6 @@ export function run(argv: readonly string[]): number {
   }
 }
 
-// Only take over the process when run as a program; the tests import `run`.
 if (process.argv[1] && import.meta.url === `file://${resolve(process.argv[1])}`) {
   process.exitCode = run(process.argv.slice(2));
 }

@@ -27,7 +27,6 @@ export interface IngestResult {
   skipped: Array<{ path: string; reason: string }>;
 }
 
-/** Errors here are shown in a list; the ladder's multi-line detail belongs in the log, not the widget. */
 export function firstLine(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   return message.split("\n")[0] ?? "unknown error";
@@ -76,7 +75,6 @@ export function ingest(cwd: string, paths: readonly string[], manifest: Manifest
   return result;
 }
 
-/** One line per document, aligned — used by both `/source list` and `teach-sources list`. */
 export function libraryLines(manifest: Manifest): string[] {
   if (manifest.docs.length === 0) return ["No sources yet. /source add <path-to-pdf-or-notes>"];
   const width = Math.max(...manifest.docs.map((d) => d.id.length));

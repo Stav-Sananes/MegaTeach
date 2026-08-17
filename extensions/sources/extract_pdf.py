@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Last rung of the PDF extraction ladder: pypdf, for machines with no poppler.
 
 Emits a form feed between pages so the caller can attribute every chunk to the
@@ -22,7 +21,7 @@ def main() -> int:
 
     try:
         reader = PdfReader(sys.argv[1])
-    except Exception as error:  # noqa: BLE001 - the caller only needs the reason
+    except Exception as error:
         print(f"could not open the PDF: {error}", file=sys.stderr)
         return 65
 
@@ -32,8 +31,7 @@ def main() -> int:
             out.write("\f")
         try:
             out.write(page.extract_text() or "")
-        except Exception as error:  # noqa: BLE001
-            # One unreadable page must not cost the whole document.
+        except Exception as error:
             print(f"page {index + 1}: {error}", file=sys.stderr)
     return 0
 

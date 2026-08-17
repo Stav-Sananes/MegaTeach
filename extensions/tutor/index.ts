@@ -37,16 +37,6 @@ interface AgentDef {
   path: string;
 }
 
-/**
- * Later directories win, so a learner can drop `.teach/agents/svg-maker.md` in a
- * project and override the shipped one without forking the repo.
- *
- * `cwd` is optional because the tool schema is built once at registration, when
- * the session cwd is not yet known. Using `process.cwd()` there would be worse
- * than omitting it: pi launched from a different directory than the session
- * would advertise an empty agent list to the model, which then never calls
- * `delegate` even though the agents resolve fine at execution time.
- */
 function agentDirs(cwd?: string): string[] {
   return [
     join(REPO_ROOT, "agents"),
@@ -90,18 +80,12 @@ function discoverAgents(cwd?: string): Map<string, AgentDef> {
           systemPrompt: body.trim(),
           path,
         });
-      } catch {
-        // One malformed agent file must not hide the others.
-      }
+      } catch {}
     }
   }
   return found;
 }
 
-/**
- * How to re-invoke pi. When pi runs under a JS runtime, `process.argv[1]` is the
- * CLI entry point; when it is a compiled binary, `process.execPath` is pi itself.
- */
 function piInvocation(args: string[]): { command: string; args: string[] } {
   const execName = basename(process.execPath).toLowerCase();
   const isGenericRuntime = /^(node|bun|deno)(\.exe)?$/.test(execName);
@@ -128,9 +112,6 @@ function runAgent(agent: AgentDef, task: string, cwd: string, signal?: AbortSign
   const { command, args: argv } = piInvocation(args);
 
   return new Promise((resolvePromise) => {
-    // An already-aborted signal never fires "abort", so without this check a turn
-    // cancelled before the spawn would still start an orphan pi process and wait
-    // for it. An svg-maker render loop is not a cheap orphan.
     if (signal?.aborted) {
       resolvePromise({ ok: false, output: "Cancelled before the subagent started." });
       return;
@@ -168,7 +149,6 @@ function runAgent(agent: AgentDef, task: string, cwd: string, signal?: AbortSign
   });
 }
 
-/** Everything the model should know before the first question of a session. */
 function kickoff(topic: string, ctx: ExtensionContext): string {
   const philosophy = loadPhilosophy(ctx.cwd);
   const rows = summarize(readAttempts(ctx.cwd));
@@ -214,7 +194,6 @@ export default function tutorExtension(pi: ExtensionAPI) {
       if (hasSkillCommand) {
         pi.sendUserMessage(`/skill:teach ${body}`, { expandPromptTemplates: true });
       } else {
-        // Skill commands are disabled; name the skill and let the model read it.
         pi.sendUserMessage(
           [`Load the "teach" skill (read its SKILL.md) and follow it exactly.`, "", body].join("\n"),
         );
@@ -254,8 +233,6 @@ export default function tutorExtension(pi: ExtensionAPI) {
     },
   });
 
-  // Registration-time discovery: shipped and global agents only. Project-local
-  // agents are picked up per call, once the session cwd is known.
   const agentList = [...discoverAgents().values()];
 
   pi.registerTool({
@@ -295,8 +272,6 @@ export default function tutorExtension(pi: ExtensionAPI) {
         );
       }
 
-      // Run where the lesson lives, so relative paths in the task resolve next to
-      // the learner's note and Obsidian's ![[embeds]] find the file.
       const link = readLink(ctx.cwd);
       const workingDir = link ? assetDir(link.path) : ctx.cwd;
 

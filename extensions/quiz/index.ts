@@ -85,7 +85,6 @@ export default function quizExtension(pi: ExtensionAPI) {
       "Always set a reusable strand on quiz calls so the probe log aggregates across a session.",
     ],
     parameters: QuizParams,
-    // One dialog at a time — parallel quiz calls would race for the terminal.
     executionMode: "sequential",
 
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
@@ -98,8 +97,6 @@ export default function quizExtension(pi: ExtensionAPI) {
         );
       }
 
-      // Label the options so the returned string is unambiguous even when two
-      // options share text, and so the learner can answer by letter.
       const labelled = options.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`);
       const choices = [...labelled, DONT_KNOW];
       const picked = await ctx.ui.select(question, choices, { signal });
@@ -123,13 +120,6 @@ export default function quizExtension(pi: ExtensionAPI) {
         topic: params.topic,
       });
 
-      // What the learner sees depends on the phase, and the tool result below
-      // reports exactly that — the model must never be told an explanation
-      // landed when it did not.
-      //
-      // The probe stays silent: revealing the answer mid-probe teaches, which
-      // phase 1 forbids, and it contaminates every later question on the strand
-      // because the learner now knows something they did not walk in with.
       const revealed = phase === "teach";
       const shown = revealed
         ? correct

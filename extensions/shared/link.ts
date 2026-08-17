@@ -13,9 +13,7 @@ import { dirname, join, resolve } from "node:path";
 import { LOG_DIR } from "./probe-log.ts";
 
 export interface LinkState {
-  /** Absolute path to the markdown file the session writes into. */
   path: string;
-  /** ISO timestamp of when it was linked. */
   ts: string;
 }
 
@@ -23,14 +21,6 @@ function statePath(cwd: string): string {
   return join(cwd, LOG_DIR, "link.json");
 }
 
-/**
- * Expand `~`, resolve against cwd.
- *
- * The `@` comes off first: some models prefix paths with it, and `@~/vault/a.md`
- * is a likely combination given that `~` paths are the documented `/link` form.
- * Stripping in the other order leaves the `~` unexpanded and quietly creates a
- * directory literally named `~` inside the project.
- */
 export function resolveNotePath(cwd: string, input: string): string {
   const unprefixed = input.replace(/^@/, "");
   const expanded = unprefixed.startsWith("~") ? join(homedir(), unprefixed.slice(1)) : unprefixed;
@@ -54,18 +44,14 @@ export function writeLink(cwd: string, notePath: string): LinkState {
   try {
     mkdirSync(dirname(statePath(cwd)), { recursive: true });
     writeFileSync(statePath(cwd), `${JSON.stringify(state, null, 2)}\n`, "utf8");
-  } catch {
-    // A lost link file is a lost convenience, not a lost session.
-  }
+  } catch {}
   return state;
 }
 
-/** Where generated images belong: beside the note, so Obsidian's `![[file.svg]]` resolves. */
 export function assetDir(notePath: string): string {
   return dirname(notePath);
 }
 
-/** Last two path segments — enough to identify the note in a footer without eating the width. */
 export function shortPath(path: string): string {
   return path.split("/").slice(-2).join("/");
 }
