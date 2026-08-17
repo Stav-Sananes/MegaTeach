@@ -128,6 +128,19 @@ python3 -m pip install pypdf  # no system package needed
 `.md` and `.txt` sources need none of this. Scanned PDFs with no text layer are
 reported as such rather than ingested empty.
 
+The library is also reachable with no session, no model, and no key — the same
+extraction ladder, the same BM25 index, the same citations, over `argv`:
+
+```bash
+bin/teach-sources.ts add ~/course/lectures/
+bin/teach-sources.ts search "exterior derivative" --limit 5
+```
+
+That is how harnesses without an extension API reach your sources, and it is the
+cheapest way to find out whether keyword retrieval is good enough for your
+material — search your own PDF with the words *you* would use, before you spend
+a session finding out that they are not the words it uses.
+
 ## What it writes
 
 ```
@@ -157,6 +170,7 @@ one question instead of building on it.
 | `extensions/tutor/` | `/teach`, `/philosophy`, and the `delegate` subagent runner |
 | `extensions/sources/` | `/source`, `source_search`, `source_read`, and the PDF extraction ladder |
 | `extensions/shared/` | Probe log, philosophy, link state, retrieval — all unit tested |
+| `bin/teach-sources.ts` | The source library over `argv` — no harness, no model, no key |
 | `agents/` | Subagent definitions: `svg-maker`, `mermaid-maker`, `fact-checker` |
 | `PHILOSOPHY.example.md` | Template for the fork point |
 | `GUIDE.md` | How to actually use it well |
@@ -175,10 +189,24 @@ directories win: repo → `~/.pi/agent/agents/` → `.teach/agents/`.
 
 ## Other harnesses
 
-The skill degrades honestly. In Claude Code there is no `quiz` tool, so it uses
-`AskUserQuestion` and appends each result with `log-answer.sh` — the same JSONL,
-so the two harnesses share one map. See the *Harness adaptation* table in
-`skills/teach/SKILL.md`.
+The skill degrades honestly, and **needs no API key of its own** — in Claude Code
+it runs on the subscription you already have:
+
+```bash
+./install.sh --claude
+cd ~/where-you-study && claude     # then: "teach me <topic>"
+```
+
+There is no `quiz` tool there, so it uses `AskUserQuestion` and appends each
+result with `log-answer.sh` — the same JSONL, so the two harnesses share one map.
+Sources go through `skills/teach/scripts/sources.sh`, which runs the identical
+index and returns the identical `[lecture-3.pdf p.12]` citations. A topic probed
+in one harness is already measured in the other. See the *Harness adaptation*
+table in `skills/teach/SKILL.md`.
+
+> Logging into pi with a Claude Pro/Max account is not the free route: pi's docs
+> note that third-party harness usage is billed per token as extra usage rather
+> than against plan limits.
 
 ## Development
 

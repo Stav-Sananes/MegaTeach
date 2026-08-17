@@ -109,8 +109,16 @@ The SVG loop depends on the model having vision.
 - [x] `source_search` and `source_read` tools; chunks never span a page
 - [x] SKILL.md: sources outrank the model's memory on notation and conventions,
       every borrowed claim is cited, silence is stated rather than filled
+- [x] `bin/teach-sources.ts` — the same ingest, index, and citations over `argv`,
+      so harnesses without an extension API reach the library, and so retrieval
+      can be judged with no model and no credentials
 - [ ] Run it against a real course PDF and check whether keyword retrieval is
-      enough, or whether paraphrase-heavy material needs embeddings
+      enough, or whether paraphrase-heavy material needs embeddings. The cheap
+      version of this test needs no session: `teach-sources search` the PDF using
+      the learner's own phrasing rather than the source's, and see what comes
+      back. The upgrade path, if it is not enough, is a *local* embedding model —
+      never a hosted one, which would put a key between a learner and their own
+      notes.
 
 The point is not "chat with your PDF". It is that a probe question drawn from the
 learner's own course measures the thing they are actually being examined on, and a

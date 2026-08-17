@@ -14,6 +14,7 @@ If not, see the [README](README.md) first.
 - [Before your first session](#before-your-first-session)
 - [Your first session, step by step](#your-first-session-step-by-step)
 - [Teaching from your own material](#teaching-from-your-own-material)
+- [Running it in Claude Code, without an API key](#running-it-in-claude-code-without-an-api-key)
 - [Reading your probe map](#reading-your-probe-map)
 - [Driving the session](#driving-the-session)
 - [Worked example: differential forms](#worked-example-differential-forms)
@@ -193,6 +194,86 @@ python3 -m pip install pypdf  # no system package needed
 
 A scanned PDF with no text layer is reported as such rather than ingested empty —
 if you see that, you need OCR before this can read it.
+</details>
+
+<details>
+<summary>Building and searching the library with no session running</summary>
+
+`/source` is a pi command, but the library underneath it is just files, and
+`bin/teach-sources.ts` is the same code over `argv`:
+
+```bash
+SRC=~/.claude/skills/teach/scripts/sources.sh   # or <repo>/bin/teach-sources.ts
+
+$SRC doctor
+$SRC add ~/course/lectures/
+$SRC list
+$SRC search "exterior derivative" --limit 5
+$SRC read lecture-3#12 --context 2
+```
+
+`--dir <project>` points at a `.teach/` elsewhere; `--json` gives parseable
+output with the citation attached to each hit.
+
+This is the cheapest test you can run, and worth running before your first
+session: **search your own PDF using the words you would use, not the words the
+PDF uses.** If your notes say "one-form" and `$SRC search "linear functional"`
+comes back empty, you have found the limit of keyword retrieval for your material
+in ten seconds, for free, instead of halfway through a lesson.
+</details>
+
+---
+
+## Running it in Claude Code, without an API key
+
+You do not need a model provider. If you have Claude Code, you already have
+everything except the pi-specific commands.
+
+```bash
+./install.sh --claude
+cd ~/where-you-study
+claude
+```
+
+Then just ask: *teach me differential forms, up to Maxwell*. The skill loads and
+runs the same probe → plan → teach loop.
+
+> [!WARNING]
+> Logging into pi with a Claude Pro/Max account is **not** the free option. Per
+> pi's own documentation, third-party harness usage "draws from extra usage and
+> is billed per token, not against Claude plan limits." Running the skill inside
+> Claude Code is the path that costs nothing extra.
+
+What changes, and what does not:
+
+| | pi | Claude Code |
+|---|---|---|
+| Graded question | `quiz` tool | `AskUserQuestion` + `log-answer.sh` |
+| Same probe log | ✅ `.teach/probe-log.jsonl` | ✅ the identical file |
+| Your sources | `source_search` | `scripts/sources.sh` — same index, same `p.N` citations |
+| Lesson file | `note` after `/link` | writes the file you name |
+| Slash commands | `/teach` `/probe` `/source` | ask in words instead |
+
+Because both harnesses append to one `probe-log.jsonl` and read one source
+library, a topic probed in Claude Code is already measured when you next open
+pi. Switching harnesses does not restart the measurement, and does not change
+what the tutor believes your textbook says.
+
+<details>
+<summary>If you do want pi, and want it free</summary>
+
+Google's free tier needs no card, and `google` is already pi's default provider:
+
+```bash
+export GEMINI_API_KEY=...     # aistudio.google.com
+pi
+```
+
+OpenRouter also carries a set of `:free` models — `/login openrouter`, then pick
+one with `--model`. Expect weaker instruction-following on both: the probe
+depends on the model committing to an answer *before* it sees yours, and smaller
+models are the ones most likely to quietly skip that step. Check
+`.teach/probe-log.jsonl` and confirm `correctIndex` is set on every row.
 </details>
 
 ---
