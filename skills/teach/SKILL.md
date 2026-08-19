@@ -77,7 +77,20 @@ Rules:
 - **One question per `quiz` call.** Never batch.
 - You must commit to `correct_index` when you ask. You are grading, not discussing.
 - Always tag `strand`, and reuse strand names so the log aggregates.
-- "I don't know" is a valid and useful answer. Treat it as data, not failure.
+- **"I don't know" means go shallower.** It is the same move as a wrong answer,
+  not a reason to leave. A learner who cannot answer at this depth has a
+  boundary somewhere below it, and you have not found it yet. Never end a strand
+  on an admitted blank — that records a gap without locating it, which is the
+  one outcome worse than not asking.
+- **Finish the strand you are on.** Two questions on each of eight strands is a
+  survey, not a measurement: it tells you they are shaky everywhere and where
+  nothing begins. Move on only when you can name the last thing they hold and
+  the first thing they do not, or when three straight misses have put the
+  boundary below the strand's fundamentals — that is `absent`, and it is a
+  finding, so say it and move on.
+- **Do not re-ask a question they already missed** at the same depth later in the
+  same session. They have not learned anything since; you are measuring memory
+  of the question. Go shallower instead.
 - Do **not** teach during the probe. No explanations, no hints, no "actually, the
   reason is…". Acknowledge and move to the next question.
 - Do not stop early because it feels like a lot of questions. A long probe with a
@@ -203,6 +216,31 @@ them change the probe — only how you run it.
 **Never ask from inside a subagent.** `AskUserQuestion` does not work there.
 Subagents draw, diagram, and fact-check; quizzing stays in the main session.
 
+### Steer yourself — nothing else will
+
+`quiz` returns a direction after every answer: *probe deeper*, or *this is at or
+past the edge, probe shallower*. `AskUserQuestion` returns the learner's pick and
+nothing more. On this path the steering is yours to supply, and it is the part
+that quietly goes missing — the questions keep coming, all at the same depth,
+and the probe turns into a quiz show.
+
+So after every answer, before you write the next question, say which move you
+are making and why:
+
+- **Right** → deeper on this strand. Same strand, one level harder.
+- **Wrong** → shallower on this strand. Same strand, one level easier — not the
+  same question rephrased, and not a different topic.
+- **"I'm not sure"** → shallower, exactly as for wrong.
+- **Right at the depth below a miss** → boundary located. Name it, write it into
+  the map, and only now start a new strand.
+
+If you cannot name the move, you have lost the binary search and are sampling at
+random. Go back to the last answer and work out which side of it you are on.
+
+A typed free-text answer is better data than a forced pick, not worse. "B, but
+only if the writes are on the same row" tells you where the boundary is far more
+precisely than B does. Log what they actually said, grade the substance, and let
+the hedge steer the next question.
 Log it with the script that sits beside this file. **Use the absolute path of the
 directory you read this SKILL.md from** — the skill is usually installed outside
 the learner's project (`~/.claude/skills/teach/`, `~/.pi/agent/skills/teach/`), so
