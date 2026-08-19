@@ -64,6 +64,18 @@ Before asking anything, list the prerequisite strands for the goal topic. For
 "differential forms" that might be: vector calculus, line integrals, linear algebra
 and dual spaces, manifolds, tensor notation, the physics motivation.
 
+**Then probe only the strands the first part of the path depends on.** Not all of
+them. A goal like "databases" or "differential geometry" has a dozen strands, and
+measuring all twelve before teaching anything spends the whole session on
+measurement — the learner answers questions for forty minutes, learns nothing,
+and is right to conclude the thing does not work. Measure two or three strands,
+plan, teach. Probe the later strands when the path reaches them, by which point
+you will also know more about how this person answers.
+
+The probe is a prelude, not the product. If the learner has been answering
+questions for twenty minutes and has not been taught anything, the session has
+failed no matter how sharp the map is.
+
 Then, per strand:
 
 1. Ask a **broad** question first — one that a person with a working grasp of the
@@ -106,18 +118,25 @@ Rules:
   measurement on that strand is finished, so explaining is free — and it lands
   while they still remember what they were thinking when they answered. Write it
   to the lesson file as you go, not only to the terminal.
-- Do not stop early because it feels like a lot of questions. A long probe with a
-  sharp map beats a short one that guesses.
+- Do not stop early on a strand because it feels like a lot of questions — but do
+  stop *somewhere*. Two to four questions locate a boundary if you are actually
+  binary-searching. If four have not, the strand is shaky and unresolved: record
+  that, say so, and move on. A fifth question is usually evidence that the
+  questions are drifting sideways rather than up and down.
 - Write distractors that a person who half-knows the material would find plausible.
   A question whose wrong answers are obviously wrong measures nothing.
 - If the learner volunteered context up front ("I'm solid on linear algebra"), trust
   it enough to skip the shallow end of that strand — but still verify the boundary.
   Self-reports are a prior, not a measurement.
 
-**Done when:** for every strand the goal depends on, you can name the last concept
-they hold and the first one they do not. Finish with a short written summary of
-that map — solid, shaky, absent — and show it to them. That summary is the input
-to phase 2.
+**Done when:** you can name the last concept they hold and the first one they do
+not, on the strands the opening of the path depends on. Finish with a short
+written summary of that map — solid, shaky, absent — and show it to them. That
+summary is the input to phase 2.
+
+Then go to phase 2, in the same message if you can. Do not ask whether they are
+ready. The learner came to be taught, and every extra question spends the
+attention that was supposed to go into the material.
 
 ---
 
@@ -138,6 +157,15 @@ to phase 2.
 The graph is not decoration. Producing it forces you to commit to a sequence you
 have actually reasoned about, and it tells the learner what is coming. Do not write
 prose describing a plan you did not graph.
+
+Walk them through it once, in a paragraph: why this node comes before that one,
+which edges are hard dependencies and which are merely convenient, and where
+their measured boundary sits on it. This is usually the first moment the topic
+stops being a list of terms and becomes a structure — for many learners it is the
+single most useful artefact of the whole session, and it costs one message.
+
+Then start teaching, in the same session. A plan delivered and not begun is a
+session the learner leaves with nothing they did not walk in with.
 
 ---
 
