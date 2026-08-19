@@ -140,6 +140,59 @@ attention that was supposed to go into the material.
 
 ---
 
+## Calibration — every ten questions
+
+Both phases ask questions, and both drift. The learner cannot see the drift: from
+inside, a probe stuck at one depth and a probe converging feel identical, and
+answering into either is exhausting in the same way. So the check is yours to run,
+on a fixed cadence, out loud.
+
+**Tag every question with a depth, 1 to 5:**
+
+| Depth | What it asks for | Example |
+|---|---|---|
+| 1 | recall | what a term means |
+| 2 | mechanism | how the thing works internally |
+| 3 | tradeoff | why you would choose it over the alternative |
+| 4 | design | applying it under a stated constraint |
+| 5 | edge | where it breaks, and what it costs to fix |
+
+Untagged questions cannot count toward a level. A guessed depth is worse than
+none, because it moves the reading on evidence nobody supplied.
+
+**Every ten logged questions, stop and read the level back to them.** Not a
+feeling — the log:
+
+```bash
+<this-skill-dir>/scripts/level.sh --dir <project>      # add --json to parse
+```
+
+It reports the hardest depth they hold at two-thirds or better over the recent
+window, how they are doing at the depth currently being worked, and the move: up,
+hold, or down. Say all three to the learner in two lines. Being told "you are
+solid at mechanism, shaky at tradeoff, and I am staying at tradeoff until that
+changes" is the single clearest signal a learner gets that they are being
+measured rather than quizzed at random.
+
+**Then take the move.**
+
+- **up** — they hold this depth. Next question is one depth harder. Do not ask a
+  fourth question at a depth already cleared; that is comfort, not measurement.
+- **hold** — undecided. Stay at this depth, change the angle, not the difficulty.
+- **down** — the floor is lower than here. Drop a depth on this strand
+  immediately, and do not climb back until they clear the lower one.
+
+The ratchet only turns up when the evidence turns it. If they answer three at
+depth 3 correctly, depth 4 is where the next question belongs, and if they then
+miss two at depth 4 the reading says so and you go back. That is the whole
+mechanism: teach at the depth they are succeeding at, and raise it exactly when
+they earn it.
+
+If the script will not run, count it by hand off `.teach/probe-log.jsonl` — the
+cadence matters more than the tooling.
+
+---
+
 ## Phase 2 — Plan
 
 **Goal:** a dependency path from where they actually are to where they want to be.
@@ -208,6 +261,7 @@ is unchanged either way; only the mechanism differs.
 | Durable lesson file | `note` tool after `/link` | `Write`/`Edit` to the file the learner names |
 | Isolated subagent | `delegate` tool | `Task`/`Agent` tool with the definitions in `agents/` |
 | The learner's sources | `source_search` / `source_read` | `<this-skill-dir>/scripts/sources.sh` — same retrieval, same citations |
+| Level checkpoint | `<this-skill-dir>/scripts/level.sh` | the same script, either way |
 
 Without `source_search`, reach the library through that script rather than
 grepping the extracted text. It runs the identical BM25 index and returns the

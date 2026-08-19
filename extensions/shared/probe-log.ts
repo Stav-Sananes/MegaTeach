@@ -31,6 +31,8 @@ export interface ProbeAttempt {
   correctAnswer?: string;
   /** One sentence on why that answer is correct. Never shown during the probe. */
   rationale?: string;
+  /** How hard the question was, 1–5. Without it the log cannot say a level went up. */
+  depth?: number;
   topic?: string;
 }
 
@@ -93,6 +95,7 @@ export function parseAttempts(raw: string): ProbeAttempt[] {
         admitted: parsed.admitted === true,
         correctAnswer: typeof parsed.correctAnswer === "string" && parsed.correctAnswer ? parsed.correctAnswer : undefined,
         rationale: typeof parsed.rationale === "string" && parsed.rationale ? parsed.rationale : undefined,
+        depth: typeof parsed.depth === "number" && parsed.depth >= 1 && parsed.depth <= 5 ? parsed.depth : undefined,
         topic: typeof parsed.topic === "string" ? parsed.topic : undefined,
       });
     } catch {}
@@ -166,4 +169,68 @@ export function formatForModel(rows: readonly StrandSummary[], nowMs: number): s
     "Treat `solid` as verified, `shaky` and `absent` as gaps to start from, and",
     "`stale` as unverified — re-probe stale strands with one question before building on them.",
   ].join("\n");
+}
+
+export const DEPTH_NAMES = ["", "recall", "mechanism", "tradeoff", "design", "edge"] as const;
+
+export interface LevelReading {
+  /** The hardest depth they clear at SOLID_RATIO or better, 0 if none. */
+  level: number;
+  /** Right out of total at the depth being worked, over the recent window. */
+  atLevel: { depth: number; right: number; total: number };
+  move: "up" | "hold" | "down";
+  reason: string;
+}
+
+/**
+ * What level is this learner working at, and should the next question be harder?
+ *
+ * Only the recent window counts. A strand answered well an hour ago is history;
+ * the question being chosen now is chosen against what they are doing now.
+ */
+export function readLevel(attempts: readonly ProbeAttempt[], window = 10): LevelReading {
+  const recent = attempts.filter((a) => a.depth !== undefined).slice(-window);
+  if (recent.length === 0) {
+    return { level: 0, atLevel: { depth: 0, right: 0, total: 0 }, move: "hold", reason: "No depth-tagged questions yet." };
+  }
+
+  const byDepth = new Map<number, { right: number; total: number }>();
+  for (const a of recent) {
+    const row = byDepth.get(a.depth!) ?? { right: 0, total: 0 };
+    row.total += 1;
+    if (a.correct) row.right += 1;
+    byDepth.set(a.depth!, row);
+  }
+
+  let level = 0;
+  for (const [depth, row] of [...byDepth].sort((x, y) => x[0] - y[0])) {
+    if (row.right / row.total >= SOLID_RATIO) level = depth;
+  }
+
+  const working = recent.at(-1)!.depth!;
+  const row = byDepth.get(working)!;
+  const ratio = row.right / row.total;
+
+  if (ratio >= SOLID_RATIO && row.total >= 2) {
+    return {
+      level,
+      atLevel: { depth: working, right: row.right, total: row.total },
+      move: "up",
+      reason: `${row.right}/${row.total} at depth ${working} (${DEPTH_NAMES[working]}) — this depth is held, go harder.`,
+    };
+  }
+  if (ratio <= 1 / 3 && row.total >= 2) {
+    return {
+      level,
+      atLevel: { depth: working, right: row.right, total: row.total },
+      move: "down",
+      reason: `${row.right}/${row.total} at depth ${working} (${DEPTH_NAMES[working]}) — the floor is lower than this.`,
+    };
+  }
+  return {
+    level,
+    atLevel: { depth: working, right: row.right, total: row.total },
+    move: "hold",
+    reason: `${row.right}/${row.total} at depth ${working} (${DEPTH_NAMES[working]}) — not yet decided, stay here.`,
+  };
 }

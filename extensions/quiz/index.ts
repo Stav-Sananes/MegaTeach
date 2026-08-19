@@ -50,6 +50,15 @@ const QuizParams = Type.Object({
   rationale: Type.String({
     description: "One sentence: why the correct option is correct. Shown to the learner after they answer.",
   }),
+  depth: Type.Optional(
+    Type.Integer({
+      minimum: 1,
+      maximum: 5,
+      description:
+        "How hard this question is: 1 recall, 2 mechanism, 3 tradeoff, 4 design under constraint, 5 edge case. " +
+        "Tag every question — without it the log cannot tell whether the learner's level is rising.",
+    }),
+  ),
   phase: Type.Optional(
     StringEnum(["probe", "teach"] as const, {
       description: "Which phase asked this. Defaults to probe.",
@@ -119,6 +128,7 @@ export default function quizExtension(pi: ExtensionAPI) {
         admitted,
         correctAnswer: options[correct_index]!,
         rationale,
+        depth: params.depth,
         topic: params.topic,
       });
 

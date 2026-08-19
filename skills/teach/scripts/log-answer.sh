@@ -8,7 +8,7 @@
 #
 # Usage:
 #   log-answer.sh <strand> <correct|wrong|unknown> "<question>" [phase] \
-#                 [--answer "<the correct option>"] [--why "<one sentence>"]
+#                 [--answer "<the correct option>"] [--why "<one sentence>"] [--depth 1-5]
 #
 # Example:
 #   log-answer.sh linear-algebra/dual-spaces wrong "What does a 1-form eat?" probe \
@@ -22,7 +22,7 @@ set -euo pipefail
 
 usage() {
   echo "usage: $(basename "$0") <strand> <correct|wrong|unknown> \"<question>\" [probe|teach]" \
-       "[--answer \"<correct option>\"] [--why \"<one sentence>\"]" >&2
+       "[--answer \"<correct option>\"] [--why \"<one sentence>\"] [--depth 1-5]" >&2
   exit 64
 }
 
@@ -38,6 +38,7 @@ shift 3
 phase="probe"
 correct_answer=""
 rationale=""
+depth=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -50,6 +51,14 @@ while [ "$#" -gt 0 ]; do
     --why)
       [ "$#" -ge 2 ] || { echo "--why needs a value" >&2; exit 64; }
       rationale="$2"
+      shift
+      ;;
+    --depth)
+      [ "$#" -ge 2 ] || { echo "--depth needs a value" >&2; exit 64; }
+      case "$2" in
+        [1-5]) depth="$2" ;;
+        *) echo "--depth must be 1..5 (got: $2)" >&2; exit 64 ;;
+      esac
       shift
       ;;
     *) echo "unexpected argument: $1" >&2; usage ;;
@@ -71,10 +80,17 @@ json_escape() {
     | awk 'BEGIN { ORS = "" } NR > 1 { print "\\n" } { print }'
 }
 
+# An untagged question is logged without the field rather than with a wrong one:
+# a guessed depth would move the level reading on evidence nobody supplied.
+depth_field=""
+if [ -n "$depth" ]; then
+  depth_field=",\"depth\":$depth"
+fi
+
 log_dir="${TEACH_LOG_DIR:-.teach}"
 mkdir -p "$log_dir"
 
-printf '{"ts":"%s","strand":"%s","phase":"%s","question":"%s","options":[],"correctIndex":-1,"answerIndex":null,"answer":"","correct":%s,"admitted":%s,"correctAnswer":"%s","rationale":"%s"}\n' \
+printf '{"ts":"%s","strand":"%s","phase":"%s","question":"%s","options":[],"correctIndex":-1,"answerIndex":null,"answer":"","correct":%s,"admitted":%s,"correctAnswer":"%s","rationale":"%s"%s}\n' \
   "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
   "$(json_escape "$strand")" \
   "$phase" \
@@ -83,4 +99,5 @@ printf '{"ts":"%s","strand":"%s","phase":"%s","question":"%s","options":[],"corr
   "$admitted" \
   "$(json_escape "$correct_answer")" \
   "$(json_escape "$rationale")" \
+  "$depth_field" \
   >> "$log_dir/probe-log.jsonl"
