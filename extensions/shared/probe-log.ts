@@ -27,6 +27,10 @@ export interface ProbeAttempt {
   answer: string;
   correct: boolean;
   admitted: boolean;
+  /** The correct option, in words. Kept so a debrief survives the session that measured it. */
+  correctAnswer?: string;
+  /** One sentence on why that answer is correct. Never shown during the probe. */
+  rationale?: string;
   topic?: string;
 }
 
@@ -87,6 +91,8 @@ export function parseAttempts(raw: string): ProbeAttempt[] {
         answer: parsed.answer ?? "",
         correct: parsed.correct,
         admitted: parsed.admitted === true,
+        correctAnswer: typeof parsed.correctAnswer === "string" && parsed.correctAnswer ? parsed.correctAnswer : undefined,
+        rationale: typeof parsed.rationale === "string" && parsed.rationale ? parsed.rationale : undefined,
         topic: typeof parsed.topic === "string" ? parsed.topic : undefined,
       });
     } catch {}

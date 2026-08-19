@@ -209,21 +209,35 @@ the learner's project (`~/.claude/skills/teach/`, `~/.pi/agent/skills/teach/`), 
 a path relative to the working directory will not exist:
 
 ```bash
-<this-skill-dir>/scripts/log-answer.sh <strand> <correct|wrong|unknown> "<question>" [probe|teach]
+<this-skill-dir>/scripts/log-answer.sh <strand> <correct|wrong|unknown> "<question>" [probe|teach] \
+  --answer "<the correct option, in words>" \
+  --why "<one sentence: why that answer is the answer>"
 ```
+
+**Pass `--answer` and `--why` on every call.** Without them the log is a
+scoreboard — it knows you got a question wrong and cannot tell you what the
+answer was. With them it is a debrief that outlives the session, which matters
+because the probe deliberately shows the learner nothing at the time. Writing
+them costs you one line; reconstructing them a week later is impossible.
+
+Logging the rationale is not the same as revealing it. Nothing displays these
+fields, so the probe stays silent. Read them back at the end of the probe and
+write the debrief into the learner's lesson file then — that is when the
+measurement is over and explaining is free.
 
 If you cannot locate or run the script, append the line yourself — the format is
 the contract, not the script:
 
 ```bash
 mkdir -p .teach && cat >> .teach/probe-log.jsonl <<'EOF'
-{"ts":"<ISO-8601>","strand":"<strand>","phase":"probe","question":"<question>","options":[],"correctIndex":-1,"answerIndex":null,"answer":"","correct":false,"admitted":true}
+{"ts":"<ISO-8601>","strand":"<strand>","phase":"probe","question":"<question>","options":[],"correctIndex":-1,"answerIndex":null,"answer":"","correct":false,"admitted":true,"correctAnswer":"<the correct option>","rationale":"<one sentence>"}
 EOF
 ```
 
 `correct` and `admitted` are the two fields everything downstream aggregates on:
 `correct: true` for right, both `false` for a wrong guess, `admitted: true` for
-"I don't know".
+"I don't know". `correctAnswer` and `rationale` are what let you debrief later;
+they are optional to the parser and mandatory to you.
 
 Do not skip the logging, and confirm the file grew after the first write. An
 unlogged probe is a probe that only helps this session.

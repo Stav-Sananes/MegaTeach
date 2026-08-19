@@ -117,6 +117,8 @@ export default function quizExtension(pi: ExtensionAPI) {
         answer,
         correct,
         admitted,
+        correctAnswer: options[correct_index]!,
+        rationale,
         topic: params.topic,
       });
 

@@ -70,6 +70,50 @@ test("the skill tells the model to invoke the script by its own directory", asyn
   assert.match(skill, /probe-log\.jsonl/, "the raw JSONL fallback is documented too");
 });
 
+test("log-answer.sh records the correct answer and the reason, so a debrief outlives the session", async () => {
+  await withTempDir((dir) => {
+    log(dir, [
+      "db/isolation",
+      "wrong",
+      "What does write skew need?",
+      "probe",
+      "--answer",
+      "Two transactions reading the same set and writing disjoint rows",
+      "--why",
+      'Snapshot isolation checks write-write conflicts only, so a constraint over rows neither transaction wrote survives.',
+    ]);
+
+    const [attempt] = readAttempts(dir);
+    assert.equal(attempt?.correctAnswer, "Two transactions reading the same set and writing disjoint rows");
+    assert.match(attempt?.rationale ?? "", /write-write conflicts only/);
+    assert.equal(attempt?.phase, "probe");
+    assert.equal(attempt?.correct, false);
+  });
+});
+
+test("the flags are optional, and an empty one reads back as absent rather than an empty string", async () => {
+  await withTempDir((dir) => {
+    log(dir, ["algebra/groups", "correct", "What is a coset?"]);
+    const [attempt] = readAttempts(dir);
+    assert.equal(attempt?.correctAnswer, undefined);
+    assert.equal(attempt?.rationale, undefined);
+  });
+});
+
+test("a flag missing its value is an error, not a line logged with the next flag as its text", async () => {
+  await withTempDir((dir) => {
+    assert.throws(() => log(dir, ["strand", "correct", "q", "--answer"]));
+    assert.throws(() => log(dir, ["strand", "correct", "q", "--nonsense", "x"]));
+    assert.deepEqual(readAttempts(dir), []);
+  });
+});
+
+test("the skill requires the reason on every logged question", async () => {
+  const skill = readFileSync(fileURLToPath(new URL("../skills/teach/SKILL.md", import.meta.url)), "utf8");
+  assert.match(skill, /--answer/);
+  assert.match(skill, /--why/);
+});
+
 test("log-answer.sh rejects an unknown result rather than logging a wrong measurement", async () => {
   await withTempDir((dir) => {
     assert.throws(() => log(dir, ["strand", "maybe", "q"]));
