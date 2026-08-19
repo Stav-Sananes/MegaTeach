@@ -138,6 +138,57 @@ the command to convert it.
 `.md` and `.txt` sources need none of this. Scanned PDFs with no text layer are
 reported as such rather than ingested empty.
 
+### Without pi, and without a slash command
+
+The library is a directory and a script, not a feature of one harness. In Claude
+Code — or any agent that can run a shell command — reach it directly:
+
+```bash
+SRC=~/.claude/skills/teach/scripts/sources.sh   # or <repo>/bin/teach-sources.ts
+
+$SRC add ~/course/lectures/lecture-3.pdf    # PDFs, .docx, .md, .txt
+$SRC add ~/course/notes/                    # or a whole directory
+$SRC list                                   # what the library holds
+$SRC doctor                                 # which extractors this machine has
+$SRC search "linear functional" --limit 5   # what the tutor will find
+$SRC read lecture-3.pdf#12                  # the chunk behind a citation
+```
+
+Everything lands in `.teach/sources/` beside the probe log, so the library and
+the map travel together and a topic ingested in one harness is already ingested
+in the other.
+
+### Teaching from your material and nothing else
+
+Adding sources makes them outrank the model's memory. If you want the stronger
+thing — a tutor that teaches *your course*, not the subject in general — say so
+at the start of the session:
+
+```
+teach me chapter 4, using only my sources. Where they are silent, say so and
+ask me before filling the gap from your own knowledge.
+```
+
+That is worth doing when your exam is set by the person who wrote the PDF.
+Notation, sign conventions, which results are quotable and which must be proved,
+even what a symbol is allowed to mean — all of it is course-local, and a correct
+generic answer can still lose you the marks. It is worth *not* doing when you are
+learning something for yourself and your material is thin: the model's own
+knowledge is broader than one lecturer's handout, and the citation rule already
+keeps the two apart on the page.
+
+Check what the tutor will actually find before you rely on it:
+
+```bash
+$SRC search "the exact phrase you would use" --limit 5
+```
+
+Empty result, and the tutor will not find it either — matching is keyword-based,
+so if your notes say "one-form" and you search "linear functional", you have
+found the limit of the retrieval in ten seconds rather than halfway through a
+lesson. Add the phrasing you use to the query, or ask the tutor to search several
+ways.
+
 The library is also reachable with no session, no model, and no key — the same
 extraction ladder, the same BM25 index, the same citations, over `argv`:
 
@@ -234,20 +285,25 @@ process. It needs pi on your PATH and skips cleanly if it is missing.
 
 ## Credit
 
-The method is not mine. It was demoed publicly by its author, Eero Alvar, and
-this repo is an independent, open-source build of that idea — probe, plan, teach,
-with the measurement taken seriously. All credit for the pedagogy goes to him.
+The method is not mine. It is Eero Alvar's, from
+[*How I Use AI to Learn Things*](https://youtu.be/kzcI5F4tGiU), and this repo is
+an independent, open-source build of that idea — probe, plan, teach, with the
+measurement taken seriously. All credit for the pedagogy goes to him.
 
 [**vasanthsreeram/Alvarmethod**](https://github.com/vasanthsreeram/Alvarmethod)
-implements the same method, and reached several of the same conclusions
-independently: a picker rather than A/B/C/D in chat, a Mermaid DAG shown before
-teaching starts, an Obsidian-shaped folder of output. Two of its ideas are in
-this repo because they are better than what was here:
+implements the same method from the same talk, and reached several of the same
+conclusions independently: a picker rather than A/B/C/D in chat, a Mermaid DAG
+shown before teaching starts, an Obsidian-shaped folder of output. Three ideas
+here were argued for by that repo first, and are implemented in this one from
+scratch — its wording, files, and assets are its own and none of them are
+vendored here:
 
 - the plan graph as a living per-topic file rather than a message in the
   scrollback (`.teach/maps/<topic>.md`)
 - prerequisite insertion — a quiz failure adds a node to the graph, not just a
   detour in the conversation
+- grading the reason rather than the letter, which is where the idea that a
+  right answer can still be a guess comes from
 
 Go and look at it. If its harness coverage or its shape suits you better, use it.
 

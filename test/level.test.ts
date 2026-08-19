@@ -56,6 +56,25 @@ test("only the recent window counts, so an hour-old run does not prop up the lev
   assert.equal(reading.move, "down");
 });
 
+test("a right answer with a thin reason does not raise the level", async () => {
+  // The whole reason for asking "why" — a guess that lands is indistinguishable
+  // from knowledge until someone asks, and then it is not.
+  const guessed = [at(3, true), at(3, true), at(3, true)].map((a) => ({ ...a, grounded: false }));
+  assert.equal(readLevel(guessed).move, "down", "three lucky guesses are not a held depth");
+  assert.equal(readLevel(guessed).level, 0);
+
+  const known = [at(3, true), at(3, true), at(3, true)].map((a) => ({ ...a, grounded: true }));
+  assert.equal(readLevel(known).move, "up");
+  assert.equal(readLevel(known).level, 3);
+});
+
+test("a strand summary counts a guessed answer as a miss, so the map does not go green on luck", async () => {
+  const { summarize, verdict } = await import("../extensions/shared/probe-log.ts");
+  const rows = summarize([at(2, true), at(2, true), at(2, true)].map((a) => ({ ...a, grounded: false })));
+  assert.equal(rows[0]?.right, 0);
+  assert.equal(verdict(rows[0]!, Date.parse("2026-08-19T13:00:00.000Z")), "absent");
+});
+
 test("untagged questions are ignored rather than counted at a guessed depth", async () => {
   const dir = mkdtempSync(join(tmpdir(), "megateach-level-"));
   try {

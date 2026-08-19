@@ -59,6 +59,14 @@ const QuizParams = Type.Object({
         "Tag every question — without it the log cannot tell whether the learner's level is rising.",
     }),
   ),
+  grounded: Type.Optional(
+    Type.Boolean({
+      description:
+        "Set only when you asked them to explain their thinking. true if the reason held up, false if the right " +
+        "letter came with a reason that did not. A correct pick with grounded:false counts as a miss everywhere " +
+        "downstream, because it was a guess.",
+    }),
+  ),
   phase: Type.Optional(
     StringEnum(["probe", "teach"] as const, {
       description: "Which phase asked this. Defaults to probe.",
@@ -129,6 +137,7 @@ export default function quizExtension(pi: ExtensionAPI) {
         correctAnswer: options[correct_index]!,
         rationale,
         depth: params.depth,
+        grounded: params.grounded,
         topic: params.topic,
       });
 

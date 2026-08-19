@@ -5,12 +5,26 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { readAttempts, summarize, verdict } from "../extensions/shared/probe-log.ts";
+
+const SKILL_DIR = fileURLToPath(new URL("../skills/teach/", import.meta.url));
+
+/**
+ * The skill is SKILL.md plus its references, and which file a rule lives in is an
+ * editorial decision that should not break a test. What must hold is that the
+ * rule is somewhere the model will read.
+ */
+function wholeSkill(): string {
+  const refs = readdirSync(join(SKILL_DIR, "references"))
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => readFileSync(join(SKILL_DIR, "references", f), "utf8"));
+  return [readFileSync(join(SKILL_DIR, "SKILL.md"), "utf8"), ...refs].join("\n");
+}
 
 const SCRIPT = fileURLToPath(new URL("../skills/teach/scripts/log-answer.sh", import.meta.url));
 
@@ -64,7 +78,7 @@ test("the skill tells the model to invoke the script by its own directory", asyn
   // The skill is installed outside the learner's project (~/.claude/skills/teach),
   // and Claude Code runs with cwd = the learner's project. A repo-relative command
   // resolves to nothing there, and every probe answer is silently lost.
-  const skill = readFileSync(fileURLToPath(new URL("../skills/teach/SKILL.md", import.meta.url)), "utf8");
+  const skill = wholeSkill();
   assert.match(skill, /<this-skill-dir>\/scripts\/log-answer\.sh/);
   assert.doesNotMatch(skill, /^\s*skills\/teach\/scripts\/log-answer\.sh /m);
   assert.match(skill, /probe-log\.jsonl/, "the raw JSONL fallback is documented too");
@@ -109,9 +123,32 @@ test("a flag missing its value is an error, not a line logged with the next flag
 });
 
 test("the skill requires the reason on every logged question", async () => {
-  const skill = readFileSync(fileURLToPath(new URL("../skills/teach/SKILL.md", import.meta.url)), "utf8");
+  const skill = wholeSkill();
   assert.match(skill, /--answer/);
   assert.match(skill, /--why/);
+  assert.match(skill, /--reason/, "grading the reason rather than the letter is part of the contract");
+});
+
+test("every reference the skill points at exists, and every reference is pointed at", async () => {
+  // Progressive disclosure only works if the map is accurate. A link to a file
+  // that is not there reads as a rule the model may skip; a file nothing links to
+  // is a rule the model never sees.
+  const index = readFileSync(join(SKILL_DIR, "SKILL.md"), "utf8");
+  const linked = new Set([...index.matchAll(/references\/([a-z-]+\.md)/g)].map((m) => m[1]!));
+  const present = new Set(readdirSync(join(SKILL_DIR, "references")).filter((f) => f.endsWith(".md")));
+
+  assert.deepEqual([...linked].sort(), [...present].sort());
+  assert.ok(present.size > 0, "the references directory is not optional");
+});
+
+test("the load-bearing rules stay in SKILL.md, not only in a reference", async () => {
+  // These are the ones that stop being a measurement if they are missed, so they
+  // are stated in the file that is always read, whatever else gets skipped.
+  const index = readFileSync(join(SKILL_DIR, "SKILL.md"), "utf8");
+  assert.match(index, /[Cc]ommit before/);
+  assert.match(index, /Log every graded question/);
+  assert.match(index, /One question at a time/);
+  assert.match(index, /Grade the reason, not the letter/);
 });
 
 test("log-answer.sh rejects an unknown result rather than logging a wrong measurement", async () => {

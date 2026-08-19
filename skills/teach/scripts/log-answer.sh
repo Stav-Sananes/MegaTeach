@@ -8,7 +8,7 @@
 #
 # Usage:
 #   log-answer.sh <strand> <correct|wrong|unknown> "<question>" [phase] \
-#                 [--answer "<the correct option>"] [--why "<one sentence>"] [--depth 1-5]
+#                 [--answer "<the correct option>"] [--why "<one sentence>"] [--depth 1-5] [--reason sound|thin]
 #
 # Example:
 #   log-answer.sh linear-algebra/dual-spaces wrong "What does a 1-form eat?" probe \
@@ -39,6 +39,7 @@ phase="probe"
 correct_answer=""
 rationale=""
 depth=""
+grounded=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -51,6 +52,15 @@ while [ "$#" -gt 0 ]; do
     --why)
       [ "$#" -ge 2 ] || { echo "--why needs a value" >&2; exit 64; }
       rationale="$2"
+      shift
+      ;;
+    --reason)
+      [ "$#" -ge 2 ] || { echo "--reason needs a value" >&2; exit 64; }
+      case "$2" in
+        sound) grounded=true ;;
+        thin)  grounded=false ;;
+        *) echo "--reason must be sound or thin (got: $2)" >&2; exit 64 ;;
+      esac
       shift
       ;;
     --depth)
@@ -87,10 +97,17 @@ if [ -n "$depth" ]; then
   depth_field=",\"depth\":$depth"
 fi
 
+# Same rule for the reason: absent means never asked, which is not the same as asked
+# and found wanting. Only a reason that was actually heard writes this field.
+grounded_field=""
+if [ -n "$grounded" ]; then
+  grounded_field=",\"grounded\":$grounded"
+fi
+
 log_dir="${TEACH_LOG_DIR:-.teach}"
 mkdir -p "$log_dir"
 
-printf '{"ts":"%s","strand":"%s","phase":"%s","question":"%s","options":[],"correctIndex":-1,"answerIndex":null,"answer":"","correct":%s,"admitted":%s,"correctAnswer":"%s","rationale":"%s"%s}\n' \
+printf '{"ts":"%s","strand":"%s","phase":"%s","question":"%s","options":[],"correctIndex":-1,"answerIndex":null,"answer":"","correct":%s,"admitted":%s,"correctAnswer":"%s","rationale":"%s"%s%s}\n' \
   "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
   "$(json_escape "$strand")" \
   "$phase" \
@@ -100,4 +117,5 @@ printf '{"ts":"%s","strand":"%s","phase":"%s","question":"%s","options":[],"corr
   "$(json_escape "$correct_answer")" \
   "$(json_escape "$rationale")" \
   "$depth_field" \
+  "$grounded_field" \
   >> "$log_dir/probe-log.jsonl"

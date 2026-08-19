@@ -33,6 +33,12 @@ export interface ProbeAttempt {
   rationale?: string;
   /** How hard the question was, 1–5. Without it the log cannot say a level went up. */
   depth?: number;
+  /**
+   * Did the reason behind the pick hold up? Only set when it was actually asked
+   * for. `false` on a correct pick means a lucky guess, which must not count as
+   * knowledge — that is the whole point of asking.
+   */
+  grounded?: boolean;
   topic?: string;
 }
 
@@ -96,11 +102,25 @@ export function parseAttempts(raw: string): ProbeAttempt[] {
         correctAnswer: typeof parsed.correctAnswer === "string" && parsed.correctAnswer ? parsed.correctAnswer : undefined,
         rationale: typeof parsed.rationale === "string" && parsed.rationale ? parsed.rationale : undefined,
         depth: typeof parsed.depth === "number" && parsed.depth >= 1 && parsed.depth <= 5 ? parsed.depth : undefined,
+        grounded: typeof parsed.grounded === "boolean" ? parsed.grounded : undefined,
         topic: typeof parsed.topic === "string" ? parsed.topic : undefined,
       });
     } catch {}
   }
   return out;
+}
+
+/**
+ * Did they actually hold this one?
+ *
+ * The pick alone cannot tell a guess from knowledge, and a guess that lands
+ * inflates every number downstream. So a correct pick whose reason was asked for
+ * and did not hold up counts as a miss here — not as a punishment, but because
+ * counting it as knowledge is how a learner ends up being taught above their
+ * real edge while the log insists they are fine.
+ */
+export function held(a: ProbeAttempt): boolean {
+  return a.correct && a.grounded !== false;
 }
 
 export function summarize(attempts: readonly ProbeAttempt[]): StrandSummary[] {
@@ -113,15 +133,15 @@ export function summarize(attempts: readonly ProbeAttempt[]): StrandSummary[] {
       admitted: 0,
       total: 0,
       lastSeen: a.ts,
-      lastCorrect: a.correct,
+      lastCorrect: held(a),
     };
     row.total += 1;
-    if (a.correct) row.right += 1;
+    if (held(a)) row.right += 1;
     else if (a.admitted) row.admitted += 1;
     else row.wrong += 1;
     if (a.ts >= row.lastSeen) {
       row.lastSeen = a.ts;
-      row.lastCorrect = a.correct;
+      row.lastCorrect = held(a);
     }
     byStrand.set(a.strand, row);
   }
@@ -198,7 +218,7 @@ export function readLevel(attempts: readonly ProbeAttempt[], window = 10): Level
   for (const a of recent) {
     const row = byDepth.get(a.depth!) ?? { right: 0, total: 0 };
     row.total += 1;
-    if (a.correct) row.right += 1;
+    if (held(a)) row.right += 1;
     byDepth.set(a.depth!, row);
   }
 
