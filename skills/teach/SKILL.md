@@ -25,7 +25,11 @@ theirs, and it is the point.
    `.teach/probe-log.jsonl` if that tool is unavailable. Strands measured recently
    do not need re-probing from scratch; strands measured long ago are not evidence
    about today.
-3. **Confirm the destination.** One sentence, in their words, of what they want to
+3. **Pick up the map.** If `.teach/maps/<topic>.md` exists, this is not a new
+   session on a new topic — read it and continue from the first node not marked
+   taught. Re-planning a path the learner has already walked half of is the
+   fastest way to lose their trust in the plan.
+4. **Confirm the destination.** One sentence, in their words, of what they want to
    be able to do at the end. A vague goal produces a vague path.
 
 ---
@@ -204,8 +208,15 @@ cadence matters more than the tooling.
    do not start above their edge.
 3. Delegate fact-checking for anything you are not certain of. Definitions,
    conventions, and notation vary between sources — pick one and say which.
-4. Emit the path as a **Mermaid graph** and show it to the learner. Write it to
-   their linked note if one exists.
+4. Emit the path as a **Mermaid graph**, show it to the learner, and write it to
+   `.teach/maps/<topic>.md`. That file is the map's home, not the transcript —
+   a graph shown once and left in the scrollback is gone by the next session.
+
+The map file is alive. Mark each node as it moves: pending, current, taught, plus
+one line of what the learner actually got out of it. Re-read it at the start of
+every session on this topic and continue from the first node not marked taught,
+rather than re-deriving the path from scratch and quietly producing a different
+one. Where a lesson note exists, link the two.
 
 The graph is not decoration. Producing it forces you to commit to a sequence you
 have actually reasoned about, and it tells the learner what is coming. Do not write
@@ -239,6 +250,13 @@ After each step:
   very easy for you to lose calibration.
 - Wrong answer → do not push forward. Back up, find which sub-step broke, re-explain
   from there. A wrong answer is the system working.
+- **If the break is a missing prerequisite, put it in the graph.** Not a detour in
+  the conversation — a new node in `.teach/maps/<topic>.md`, inserted before the
+  node they are stuck on, with the edge that says why it comes first. Teach it,
+  mark it taught, then return. A prerequisite that surfaces mid-lesson is a real
+  edge you missed in the plan, and the map is wrong until it contains it. It also
+  means the second session on this topic starts from a graph that already knows
+  what tripped them in the first.
 
 Use visuals whenever a relationship is geometric or structural. Delegate to
 `svg-maker` or `mermaid-maker` so the image work does not eat this context — and so
