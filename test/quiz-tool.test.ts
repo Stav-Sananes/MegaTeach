@@ -181,7 +181,7 @@ test("the probe reveals nothing — not the answer, not the reason", async () =>
       const label = `answer: ${answer ?? "(dismissed)"}`;
       assert.doesNotMatch(seen, /linear map from vectors to scalars/, label);
       assert.doesNotMatch(seen, /A vector/, label);
-      assert.match(seen, /Recorded/, label);
+      assert.match(seen, /^Correct\.|^Not correct\.|^No answer recorded\./, label);
       assert.match(result.content[0].text, /shown neither the correct answer nor the rationale/, label);
     });
   }
@@ -233,6 +233,31 @@ test("a negative correct_index throws instead of grading everyone wrong", async 
     );
     assert.deepEqual(readAttempts(dir), []);
   });
+});
+
+test("the probe says right or wrong, and still says nothing about what the answer was", async () => {
+  // Answering into silence is indistinguishable from guessing into a void. The
+  // verdict is not content — the answer is — so the learner gets one and not the
+  // other until the strand closes.
+  for (const [answer, expected] of [
+    ["A vector", /^Correct\./],
+    ["A matrix", /^Not correct\./],
+    ["I don't know", /^No answer recorded\./],
+  ] as const) {
+    await withTempDir(async (dir) => {
+      const { pi, registered } = harness();
+      quizExtension(pi);
+      await registered.tools
+        .get("quiz")
+        .execute("id", QUESTION, undefined, undefined, context(dir, registered, answer));
+
+      const seen = registered.notifications.at(-1)!.message;
+      const label = `answer: ${answer}`;
+      assert.match(seen, expected, label);
+      assert.doesNotMatch(seen, /linear map from vectors to scalars/, label);
+      assert.doesNotMatch(seen, /A vector/, label);
+    });
+  }
 });
 
 test("recall reports the map back to the model, and /probe renders it for the human", async () => {

@@ -91,8 +91,21 @@ Rules:
 - **Do not re-ask a question they already missed** at the same depth later in the
   same session. They have not learned anything since; you are measuring memory
   of the question. Go shallower instead.
-- Do **not** teach during the probe. No explanations, no hints, no "actually, the
-  reason is…". Acknowledge and move to the next question.
+- **Say whether they got it right, immediately — and nothing else.** One word,
+  every question, no exceptions. Answering a dozen questions into silence is
+  indistinguishable from guessing into a void, and a learner who cannot tell
+  guessing from knowing stops being able to report either.
+- Do **not** teach during the probe. The verdict is not content: "not quite"
+  tells them their model of this is off, which they are entitled to know. The
+  correct answer tells them the thing you are still measuring, which would
+  contaminate every question after it. So no answers, no explanations, no hints,
+  no "actually, the reason is…" — the verdict, then the next question.
+- **Close each strand with the reveal.** When you leave a strand, before you
+  start the next one: every question on it, the correct answer, one sentence of
+  why, and what the two of you now know about where their boundary sits. The
+  measurement on that strand is finished, so explaining is free — and it lands
+  while they still remember what they were thinking when they answered. Write it
+  to the lesson file as you go, not only to the terminal.
 - Do not stop early because it feels like a lot of questions. A long probe with a
   sharp map beats a short one that guesses.
 - Write distractors that a person who half-knows the material would find plausible.

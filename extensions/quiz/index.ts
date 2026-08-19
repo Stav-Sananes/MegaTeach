@@ -130,8 +130,10 @@ export default function quizExtension(pi: ExtensionAPI) {
             ? `The answer is ${options[correct_index]} — ${rationale}`
             : `Not quite — ${options[correct_index]}. ${rationale}`
         : correct
-          ? "Recorded."
-          : "Recorded — moving on.";
+          ? "Correct. (Probe — the reason comes when this strand closes.)"
+          : admitted
+            ? "No answer recorded. (Probe — the reason comes when this strand closes.)"
+            : "Not correct. (Probe — the answer and the reason come when this strand closes.)";
       ctx.ui.notify(shown, revealed && !correct && !admitted ? "warning" : "info");
 
       const verdict = admitted
