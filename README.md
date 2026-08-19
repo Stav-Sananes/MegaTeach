@@ -234,7 +234,21 @@ process. It needs pi on your PATH and skips cleanly if it is missing.
 
 ## Credit
 
-The approach is a reimplementation of a system demoed publicly by its author.
-This repo is an independent, open-source build of the same idea.
+The method is not mine. It was demoed publicly by its author, Eero Alvar, and
+this repo is an independent, open-source build of that idea — probe, plan, teach,
+with the measurement taken seriously. All credit for the pedagogy goes to him.
+
+[**vasanthsreeram/Alvarmethod**](https://github.com/vasanthsreeram/Alvarmethod)
+implements the same method, and reached several of the same conclusions
+independently: a picker rather than A/B/C/D in chat, a Mermaid DAG shown before
+teaching starts, an Obsidian-shaped folder of output. Two of its ideas are in
+this repo because they are better than what was here:
+
+- the plan graph as a living per-topic file rather than a message in the
+  scrollback (`.teach/maps/<topic>.md`)
+- prerequisite insertion — a quiz failure adds a node to the graph, not just a
+  detour in the conversation
+
+Go and look at it. If its harness coverage or its shape suits you better, use it.
 
 MIT licensed.
