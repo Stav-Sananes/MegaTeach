@@ -180,6 +180,29 @@ not heard. In the teach phase it shows both.
 Without the `quiz` tool you must still commit before you see the answer: state the
 correct option to yourself in your reasoning, ask, and then log the attempt.
 
+### When the graded question is `AskUserQuestion`
+
+The tool asks; it does not grade. Four constraints follow from that, and none of
+them change the probe — only how you run it.
+
+- **Two to four options.** `quiz` takes up to six and appends "I don't know"
+  itself; `AskUserQuestion` does neither. Include an "I'm not sure" option
+  yourself on anything hard — a confident wrong answer and an honest blank are
+  different data — and accept that it costs you a distractor slot.
+- **One question per call.** The tool accepts up to four questions at once. Do
+  not use that. Each answer decides what you should ask next, so a batch of four
+  is four questions asked blind.
+- **`header` is capped at about twelve characters.** Name the strand, not the
+  question.
+- **Roughly sixty seconds to answer.** Keep questions readable at a glance. The
+  learner can hold the prompt open by starting to type in the free-text option;
+  if that is still too tight — long derivations, anything needing paper — write
+  the question into their lesson file instead and ask for a typed answer. Log it
+  identically either way.
+
+**Never ask from inside a subagent.** `AskUserQuestion` does not work there.
+Subagents draw, diagram, and fact-check; quizzing stays in the main session.
+
 Log it with the script that sits beside this file. **Use the absolute path of the
 directory you read this SKILL.md from** — the skill is usually installed outside
 the learner's project (`~/.claude/skills/teach/`, `~/.pi/agent/skills/teach/`), so

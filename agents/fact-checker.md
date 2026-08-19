@@ -29,3 +29,7 @@ Return, per claim:
 - The corrected statement, if it was wrong.
 
 Be short. A verdict with two supporting sentences beats a page of hedging.
+
+You cannot ask the learner or the calling session anything — `AskUserQuestion` and
+its equivalents do not work inside a subagent. An underspecified claim is reported
+as **unverifiable here**, with the missing context named, not held open.

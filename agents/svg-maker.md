@@ -31,3 +31,7 @@ Diagram rules:
 
 Return: the absolute path of the SVG, one sentence on what it shows, and the
 embed line to paste into the note (`![[filename.svg]]`).
+
+You cannot ask the learner anything — `AskUserQuestion` and its equivalents do not
+work inside a subagent. Where the task left something undecided, pick the reading
+that serves the lesson, draw it, and name the assumption in your output.

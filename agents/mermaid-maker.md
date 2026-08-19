@@ -26,3 +26,7 @@ every label and arrow against the syntax rules above.
 
 Return: the diagram inside a ```mermaid fence, then one line naming what a reader
 should take from it.
+
+You cannot ask the learner anything — `AskUserQuestion` and its equivalents do not
+work inside a subagent. Where the task left a relationship ambiguous, graph the
+reading you think is meant and say which one you took.

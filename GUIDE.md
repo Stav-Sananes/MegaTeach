@@ -284,6 +284,40 @@ library, a topic probed in Claude Code is already measured when you next open
 pi. Switching harnesses does not restart the measurement, and does not change
 what the tutor believes your textbook says.
 
+### What `AskUserQuestion` cannot do
+
+Three limits are worth knowing before they surprise you mid-probe.
+
+- **Two to four options.** pi's `quiz` takes up to six and adds "I don't know"
+  for you. In Claude Code one of the four slots has to be that option, so hard
+  questions carry fewer distractors.
+- **About sixty seconds to answer.** The annoying one for maths, where a
+  question can genuinely need two minutes. Starting to type in the free-text box
+  holds the prompt open. If it keeps biting, ask for the question to go into
+  your lesson file and answer it by typing instead — it is logged the same way.
+- **Subagents cannot ask you anything.** `svg-maker`, `mermaid-maker`, and
+  `fact-checker` draw and verify; they never quiz. Only the main session does.
+
+### Checking that it actually graded you
+
+pi's `quiz` cannot be talked out of grading — `correct_index` is a required
+parameter, so the model is committed before it sees your answer. In Claude Code
+that commitment is the model's own discipline plus the log, which makes the log
+worth spot-checking on your first session:
+
+```bash
+wc -l .teach/probe-log.jsonl        # note the count
+# answer one question
+tail -1 .teach/probe-log.jsonl
+```
+
+You want one new line per question, written as you go; `strand` reused across
+questions in the same strand, so `/probe` can aggregate them; and `correct` /
+`admitted` matching what you actually did. If several lines only appear after a
+run of questions, the model is reconstructing the probe from memory rather than
+committing to it — that is the drift the log exists to catch, and the probe is
+worth restarting.
+
 <details>
 <summary>If you do want pi, and want it free</summary>
 
