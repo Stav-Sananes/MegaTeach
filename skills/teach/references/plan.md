@@ -16,8 +16,19 @@ Read this when the probe has located a boundary and before you write a path.
 3. Delegate fact-checking for anything you are not certain of. Definitions,
    conventions, and notation vary between sources — pick one and say which.
 4. Emit the path as a **Mermaid graph**, show it to the learner, and write it to
-   `.teach/maps/<topic>.md`. That file is the map's home, not the transcript —
-   a graph shown once and left in the scrollback is gone by the next session.
+   a file. A graph shown once and left in the scrollback is gone by the next
+   session.
+
+   **Where.** If the learner keeps notes — an Obsidian vault, a notes directory,
+   anywhere they named — the map goes *there*, beside the lesson notes, named for
+   the topic. Only when there is no such place does it go to
+   `.teach/maps/<topic>.md`. Obsidian and most note apps hide dot-directories, so
+   a map in `.teach/` is a map the learner cannot open, and this map is the one
+   artefact most of them want back. Never leave a stub in the vault pointing at a
+   file inside a hidden directory: that is strictly worse than either copy alone.
+
+   Whichever location you choose, say the path out loud and put it in the lesson
+   note, so the next session finds it without guessing.
 
 The map file is alive. Mark each node as it moves: pending, current, taught, plus
 one line of what the learner actually got out of it. Re-read it at the start of

@@ -38,10 +38,11 @@ front spends context on a phase you have not reached.
    `.teach/probe-log.jsonl` if that tool is unavailable. Strands measured recently
    do not need re-probing from scratch; strands measured long ago are not evidence
    about today.
-3. **Pick up the map.** If `.teach/maps/<topic>.md` exists, this is not a new
-   session on a new topic — read it and continue from the first node not marked
-   taught. Re-planning a path the learner has already walked half of is the
-   fastest way to lose their trust in the plan.
+3. **Pick up the map.** Look for a map of this topic — beside their notes first,
+   then `.teach/maps/<topic>.md`. If one exists this is not a new session on a
+   new topic: read it and continue from the first node not marked taught.
+   Re-planning a path the learner has already walked half of is the fastest way
+   to lose their trust in the plan.
 4. **Confirm the destination.** One sentence, in their words, of what they want to
    be able to do at the end. A vague goal produces a vague path.
 
