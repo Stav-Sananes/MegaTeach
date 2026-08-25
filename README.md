@@ -225,6 +225,8 @@ one question instead of building on it.
 | Path | What |
 |---|---|
 | `skills/teach/SKILL.md` | The pedagogy. The main thing. |
+| `skills/teach/references/pedagogy.md` | Why a fact locks in, and the two moves that make it |
+| `skills/visualize/SKILL.md` | When a picture is worth drawing, and how to brief the maker |
 | `skills/teach/scripts/log-answer.sh` | Log an answer from a harness with no `quiz` tool |
 | `extensions/quiz/` | `quiz` + `recall` tools, `/probe` command |
 | `extensions/md-log/` | `/link` command and `note` tool |
@@ -232,7 +234,7 @@ one question instead of building on it.
 | `extensions/sources/` | `/source`, `source_search`, `source_read`, and the PDF/DOCX extraction ladders |
 | `extensions/shared/` | Probe log, philosophy, link state, retrieval — all unit tested |
 | `bin/teach-sources.ts` | The source library over `argv` — no harness, no model, no key |
-| `agents/` | Subagent definitions: `svg-maker`, `mermaid-maker`, `fact-checker` |
+| `agents/` | Subagent definitions: `researcher`, `svg-maker`, `mermaid-maker`, `fact-checker` |
 | `PHILOSOPHY.example.md` | Template for the fork point |
 | `GUIDE.md` | How to actually use it well |
 | `PLAN.md` | Build roadmap and what is still open |
@@ -306,5 +308,40 @@ vendored here:
   right answer can still be a guess comes from
 
 Go and look at it. If its harness coverage or its shape suits you better, use it.
+
+### amosblomqvist/learn
+
+[**amosblomqvist/learn**](https://github.com/amosblomqvist/learn) is the same
+method again, built as a pi configuration, and it is the direct source of a
+substantial part of what this repo now says about *teaching* rather than about
+measuring. Treat this repo as a fork of that one on the pedagogy, and an
+independent build on everything else.
+
+What came from there:
+
+- **`skills/teach/references/pedagogy.md` in its entirety.** The argument that
+  understanding is connectedness rather than recall; the click, where a pile of
+  facts collapses into a few that generate the rest; and the mechanism underneath
+  both — that a mind will not commit to a fact it is not sure is safe to commit
+  to. Then the two moves that follow from it: start from what can be accepted with
+  no caveats, and make every step feel discovered rather than decreed. The
+  unconditional-truth-versus-axiom distinction is his, and it is a genuinely
+  useful one that this repo had blurred.
+- **The option-construction procedure** in `references/harness.md`. This repo said
+  "write plausible distractors", which is advice you cannot act on. His insight is
+  that evenness has to be *built in* — write the correct claim, then mutate it
+  into each distractor — because auditing a set afterwards never catches the tell
+  you already baked in.
+- **The `visualize` skill.** This repo had maker agents and no doctrine about when
+  a picture is worth drawing. Rewritten here for harness-agnostic makers.
+- **The `researcher` agent**, and scoping the field before drawing the graph
+  rather than planning against a half-recollection of the subject.
+- **Writing maths as LaTeX** everywhere the learner reads, not only in the
+  obvious places.
+
+His repo carries no licence and is shared as-is, so nothing is vendored: every
+file above is rewritten in this repo's own words and wired into its probe log,
+level ratchet, map files, and source library. The ideas are his. Errors in the
+restatement are mine.
 
 MIT licensed.

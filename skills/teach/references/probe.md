@@ -87,7 +87,11 @@ Rules:
   Do not ask on every question — that turns a probe into an interrogation. Ask
   when the stakes are a level move, or when they answered fast on something hard.
 - Write distractors that a person who half-knows the material would find plausible.
-  A question whose wrong answers are obviously wrong measures nothing.
+  A question whose wrong answers are obviously wrong measures nothing. There is a
+  construction procedure for this in `references/harness.md` — use it rather than
+  writing three wrongs and hoping. A question the learner can answer by spotting
+  which option looks like the answer has measured your phrasing, not their
+  knowledge, and the log cannot tell the difference afterwards.
 - If the learner volunteered context up front ("I'm solid on linear algebra"), trust
   it enough to skip the shallow end of that strand — but still verify the boundary.
   Self-reports are a prior, not a measurement.

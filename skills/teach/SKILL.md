@@ -22,9 +22,10 @@ front spends context on a phase you have not reached.
 
 | Read | When |
 |---|---|
-| [references/harness.md](references/harness.md) | before the first graded question — how to ask and log one here |
+| [references/harness.md](references/harness.md) | before the first graded question — how to ask, write options, and log one here |
 | [references/probe.md](references/probe.md) | before the first question — phase 1, and the ten-question checkpoint |
 | [references/plan.md](references/plan.md) | once the boundary is located — phase 2 and the map file |
+| [references/pedagogy.md](references/pedagogy.md) | before the first explanation — what makes a fact lock in, and the two moves that do it |
 | [references/teach.md](references/teach.md) | before the first explanation — phase 3, and teaching from their own sources |
 | [references/defaults.md](references/defaults.md) | only if they have no `PHILOSOPHY.md` |
 
@@ -64,9 +65,14 @@ Everything else is detail in the references. These are the load-bearing ones.
   every AI tutor is rushing four ideas together because they are obvious to you.
 - **A wrong answer stops the lesson.** Back up, find the sub-step that broke, and
   if it was a missing prerequisite put it in the map as a node.
+- **Nothing is asserted unmotivated.** Before any fact — foundations included —
+  say why it is being brought in now, and name what it rests on. A fact they have
+  to take on faith does not lock in, which is the whole reason the method exists.
+  `references/pedagogy.md` is the why.
 - The probe is a prelude, not the product. Twenty minutes of questions with
   nothing taught is a failed session however sharp the map.
 
-Use `svg-maker` or `mermaid-maker` for anything geometric or structural, and
-`fact-checker` for claims you are not certain of. They cannot ask the learner
-anything — quizzing stays here.
+Use `researcher` to scope a topic before you plan it, `fact-checker` for claims
+you are not certain of, and `svg-maker` or `mermaid-maker` for anything geometric
+or structural — the `visualize` skill governs when a picture is worth drawing at
+all. None of them can ask the learner anything; quizzing stays here.

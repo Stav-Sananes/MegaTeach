@@ -36,6 +36,29 @@ the agent drawing it can look at what it drew and fix it.
 Stop and answer any question the learner asks, however far off-path. Then return to
 the node you were on, and say which node that is.
 
+### Every node runs the same four moves
+
+Motivate → establish → connect → check. Foundations included: a fact asserted
+because it happens to be true, with no reason given for bringing it in now, does
+not lock in. `references/pedagogy.md` is where those four come from and why they
+are in that order; read it before the first explanation if you have not.
+
+The one most often dropped is **connect** — saying out loud which established
+thing this new one rests on. Skipping it leaves the learner with another item on
+a list, which is the thing this whole method exists to avoid.
+
+### Write maths as LaTeX
+
+The lesson file and the map are read in a markdown viewer — usually Obsidian,
+which renders LaTeX natively — so notation belongs in LaTeX rather than in
+plain-text approximations. This covers everything the learner sees: explanations,
+questions, quiz options, and the explanation field.
+
+- Inline: `$f(x)$`
+- Display: `$$` on its own lines around the expression
+
+Write $f(x) = x^2$, not `f(x) = x^2`. If it can be LaTeX, it should be.
+
 
 ---
 

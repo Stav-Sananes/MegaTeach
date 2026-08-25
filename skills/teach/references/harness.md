@@ -12,6 +12,7 @@ is unchanged either way; only the mechanism differs.
 | Capability | pi (this repo's extensions) | Claude Code / other |
 |---|---|---|
 | Graded question | `quiz` tool | `AskUserQuestion`, then append the result yourself |
+| Ungraded choice | no tool — ask in prose | `AskUserQuestion`, and do not log it |
 | Prior measurements | `recall` tool | Read `.teach/probe-log.jsonl` |
 | Durable lesson file | `note` tool after `/link` | `Write`/`Edit` to the file the learner names |
 | Isolated subagent | `delegate` tool | `Task`/`Agent` tool with the definitions in `agents/` |
@@ -35,6 +36,56 @@ Add `--dir <project>` when the learner's `.teach/` is not under the working
 directory, and `--json` when you want to parse rather than read. If the script
 will not run, fall back to `Grep` over `.teach/sources/*.txt` and cite the
 document without a page number rather than inventing one.
+
+### Writing the options — build them, do not audit them
+
+"Write plausible distractors" is advice you cannot act on, because you check it
+after the fact: you write the right answer, add three wrongs, and never re-read
+them coldly. By then the tell is already baked in. Build the set so evenness is
+automatic instead:
+
+1. **No option carries its own justification.** The single biggest giveaway is a
+   correct option that explains itself — "…, because it preserves ordering" —
+   while the distractors sit there bare. It is longer, more specific, and
+   recognisable without knowing anything about the subject. Every option is a bare
+   claim. All the reasoning goes in the explanation, which they only see after
+   answering.
+2. **Write the correct claim first, then mutate it.** For each distractor, take one
+   real misconception or an easily-confused neighbour, and state what someone
+   holding *that* belief would claim — same skeleton, same grain size, same
+   register. Now every option is "the claim under some belief", and the right one
+   is just the claim under the correct belief. Parallelism falls out of the
+   construction rather than being policed afterwards.
+3. **Every distractor is an error they might actually make**, so which one they
+   pick tells you something — and unambiguously wrong on the intended reading.
+   Tempting, not tricky. A question whose wrong answers are obviously wrong
+   measures nothing; one whose right answer depends on a reading they could not
+   have known measures your phrasing.
+4. **No asymmetric emphasis.** Bolding the key term in the correct option and
+   nowhere else flags it instantly. Bold the parallel term in every option, or in
+   none.
+
+The test: read the finished set cold, as someone who does not know the material.
+If you can still pick the right one, you skipped step 1 or step 2 — regenerate the
+set rather than patching the tell.
+
+### Graded or not — decide before you pick the tool
+
+Two different questions get confused constantly, and they need different tools and
+different treatment.
+
+- **Gradable** — there is a right answer, even if you posed it openly and are
+  letting the learner reason toward it. This is `quiz`: commit to
+  `correct_index`, grade, log. A Socratic step is still a graded step. "They were
+  discovering it" is not a reason to skip the measurement, and a discovery step
+  that goes unlogged is the one place the level ratchet silently loses evidence.
+- **Not gradable** — what they want to learn, which direction to take next, how
+  much detail they want. There is no correct answer, so there is nothing to
+  grade and nothing to log. Never put one of these through `quiz`: a logged
+  question with an arbitrary `correct_index` poisons every number downstream.
+
+Goal confirmation at the start of a session is the second kind. So is "shall we go
+deeper here or move on". Everything in the probe is the first kind.
 
 Note on `quiz` during the probe: it deliberately shows the learner **nothing** —
 not the correct answer, not the rationale. Do not refer back to a reason they have

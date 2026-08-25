@@ -64,6 +64,7 @@ install_pi() {
   echo "pi not found on PATH — falling back to symlinks in $PI_HOME."
   mkdir -p "$PI_HOME/skills" "$PI_HOME/extensions"
   ln -sfn "$REPO/skills/teach"          "$PI_HOME/skills/teach"
+  ln -sfn "$REPO/skills/visualize"      "$PI_HOME/skills/visualize"
   ln -sfn "$REPO/extensions/quiz"       "$PI_HOME/extensions/quiz"
   ln -sfn "$REPO/extensions/md-log"     "$PI_HOME/extensions/md-log"
   ln -sfn "$REPO/extensions/tutor"      "$PI_HOME/extensions/tutor"
@@ -98,6 +99,10 @@ install_claude() {
     ln -sfn "$REPO/skills/teach/scripts" "$dest/scripts"
     echo "  installed as /${skill_name} — rerun this after pulling, so SKILL.md stays current"
   fi
+
+  # visualize is never renamed by --as: only the teach skill is the entry point
+  # the learner types, and the maker doctrine is referenced by name from inside it.
+  ln -sfn "$REPO/skills/visualize" "$CLAUDE_HOME/skills/visualize"
 
   for agent in "$REPO"/agents/*.md; do
     ln -sfn "$agent" "$CLAUDE_HOME/agents/$(basename "$agent")"

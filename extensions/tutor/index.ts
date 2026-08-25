@@ -249,6 +249,7 @@ export default function tutorExtension(pi: ExtensionAPI) {
     promptSnippet: "delegate - run a subagent (diagrams, SVG, fact-checking) in an isolated context",
     promptGuidelines: [
       "Use delegate for diagram and SVG work instead of writing image markup inline — it keeps the lesson in context.",
+      "Use delegate with researcher once at the start of the plan phase, to scope the topic before drawing the graph.",
       "Use delegate with fact-checker during the plan phase for definitions or conventions you are not certain of.",
       "When calling delegate, write a self-contained task: the subagent cannot see the lesson so far.",
     ],

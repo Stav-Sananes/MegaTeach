@@ -8,11 +8,26 @@ Read this when the probe has located a boundary and before you write a path.
 
 **Goal:** a dependency path from where they actually are to where they want to be.
 
+0. **Scope the field before you draw it.** Send a `researcher` over the topic
+   first — its core concepts, which facts are genuinely foundational, the standard
+   framings, the usual places people go wrong. This is cheap, it happens once, and
+   it is the difference between planning against the subject and planning against
+   your half-recollection of it. A graph whose roots are wrong is worse than no
+   graph, because it is convincing. Do this before step 1, not after you have
+   already committed to a shape.
 1. Reason out the full path explicitly. Every node is one concept. Every edge is a
    real dependency — "you cannot understand B without A". If you cannot name why an
    edge exists, it is ordering, not dependency, and it does not belong in the graph.
 2. Start at their measured edge. Do not start at the beginning of the textbook, and
    do not start above their edge.
+
+   **Then audit the roots before you show anyone the graph.** For every node you
+   are treating as foundational, ask whether it is genuinely something this learner
+   can accept as-is, or a disguised theorem that itself rests on something simpler
+   they would take at face value. If it rests on something, push it down and extend
+   the graph. Roots are cheap to fix in a drawn map and expensive to fix three
+   nodes into a lesson, and everything hung off a wrong root inherits the fault.
+   `references/pedagogy.md` describes what actually qualifies as a root.
 3. Delegate fact-checking for anything you are not certain of. Definitions,
    conventions, and notation vary between sources — pick one and say which.
 4. Emit the path as a **Mermaid graph**, show it to the learner, and write it to
