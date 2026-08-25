@@ -207,14 +207,25 @@ a session finding out that they are not the words it uses.
 ```
 .teach/
 ├── probe-log.jsonl   every graded question, with strand, verdict, timestamp
+├── decisions.jsonl   every ungraded choice: your goal, your direction, your preferences
 ├── link.json         which note this project writes into
+├── maps/             the dependency graph per topic, when your notes have no home for it
 └── sources/          extracted text of your material, plus manifest.json
 ```
 
-`probe-log.jsonl` is the whole state of the system. Everything else — the `/probe`
-map, the `recall` tool, cross-session memory — is a pure function of that file.
-It is gitignored by default: it is a record of what you do not know, and that is
-yours.
+`probe-log.jsonl` is the measurement state. The `/probe` map, the `recall` tool
+and cross-session memory are all pure functions of it.
+
+`decisions.jsonl` is deliberately a **separate file**, and the separation is
+load-bearing. A graded question has a correct answer and belongs in the probe
+log; "what do you actually want to learn" does not, and writing it there would
+need a `correctIndex` invented for it. That invented number then feeds the level
+ratchet, the strand verdicts and the map — one arbitrary integer and the tutor
+teaches above your real edge while the log insists you are fine. So: right answer
+→ probe log, no right answer → decisions, never counted.
+
+Both are gitignored by default. They are a record of what you do not know and
+what you are trying to do, and that is yours.
 
 Strands go **stale**. A strand answered correctly two months ago is not evidence
 about today, so `recall` reports it as unverified and the tutor re-probes it with
@@ -228,11 +239,11 @@ one question instead of building on it.
 | `skills/teach/references/pedagogy.md` | Why a fact locks in, and the two moves that make it |
 | `skills/visualize/SKILL.md` | When a picture is worth drawing, and how to brief the maker |
 | `skills/teach/scripts/log-answer.sh` | Log an answer from a harness with no `quiz` tool |
-| `extensions/quiz/` | `quiz` + `recall` tools, `/probe` command |
+| `extensions/quiz/` | `quiz` (graded) + `ask` (ungraded) + `recall` tools, `/probe` command |
 | `extensions/md-log/` | `/link` command and `note` tool |
 | `extensions/tutor/` | `/teach`, `/philosophy`, and the `delegate` subagent runner |
 | `extensions/sources/` | `/source`, `source_search`, `source_read`, and the PDF/DOCX extraction ladders |
-| `extensions/shared/` | Probe log, philosophy, link state, retrieval — all unit tested |
+| `extensions/shared/` | Probe log, decisions log, philosophy, link state, retrieval — all unit tested |
 | `bin/teach-sources.ts` | The source library over `argv` — no harness, no model, no key |
 | `agents/` | Subagent definitions: `researcher`, `svg-maker`, `mermaid-maker`, `fact-checker` |
 | `PHILOSOPHY.example.md` | Template for the fork point |
@@ -338,6 +349,17 @@ What came from there:
   rather than planning against a half-recollection of the subject.
 - **Writing maths as LaTeX** everywhere the learner reads, not only in the
   obvious places.
+- **A picker for questions with no right answer.** His `ask_user_question` is
+  what made the graded/ungraded split explicit. Built here as the `ask` tool,
+  taken further: it takes no `correct_index` and no strand so it *cannot* become
+  a measurement, it demands a `why_ungraded` sentence as the mirror of quiz's
+  commitment, and what it records survives into the next session through
+  `recall` rather than being answered again every time.
+- **Render-and-look for Mermaid, not just a syntax check.** `svg-maker` already
+  looked at its output here; `mermaid-maker` only validated that the source
+  parsed. Valid is not readable — Mermaid will happily parse a graph whose
+  labels collide and whose arrows appear to point at the wrong node once laid
+  out, and none of that is visible in the markup.
 
 His repo carries no licence and is shared as-is, so nothing is vendored: every
 file above is rewritten in this repo's own words and wired into its probe log,

@@ -2,6 +2,10 @@
 .teach/
 PHILOSOPHY.md
 
+# Diagrams a session drew for one lesson. Output, not source.
+.alvar/
+viz/
+
 node_modules/
 *.tgz
 .DS_Store

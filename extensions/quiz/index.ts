@@ -1,20 +1,37 @@
 /**
- * quiz — a graded multiple-choice question, and the tools that read what it wrote.
+ * Asking the learner things. Two tools, and the difference between them is the
+ * whole design.
  *
- * The model must supply `correct_index` at call time, before it ever sees the
- * learner's answer. That single constraint is what separates this from a
- * conversation: the model is committed, so the answer measures the learner
- * instead of the model's willingness to agree.
+ * `quiz` is a measurement. The model must supply `correct_index` at call time,
+ * before it ever sees the answer. That single constraint is what separates it
+ * from a conversation: the model is committed, so the answer measures the
+ * learner instead of the model's willingness to agree.
+ *
+ * `ask` is not a measurement. "What do you want to learn", "shall we go deeper
+ * or move on" — real questions with no correct answer. They must never reach
+ * the probe log, because a logged question needs a `correctIndex` and any
+ * integer invented for one of these feeds the level ratchet with noise. So
+ * `ask` writes to a different file and is never counted.
+ *
+ * The two are in one file on purpose: the boundary between them is the thing
+ * most easily got wrong, and it is easier to hold when both are in view.
  *
  * Registers:
  *   quiz    (tool)    ask one graded question, return only right/wrong + what they picked
- *   recall  (tool)    what the probe log already knows about this learner
+ *   ask     (tool)    ask one ungraded question, record the choice, measure nothing
+ *   recall  (tool)    what the logs already know about this learner
  *   /probe  (command) the same map, for the human
  */
 
 import { StringEnum } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import {
+  appendDecision,
+  formatForModel as formatDecisionsForModel,
+  logPath as decisionsPath,
+  readDecisions,
+} from "../shared/decisions.ts";
 import {
   appendAttempt,
   formatForModel,
@@ -25,6 +42,15 @@ import {
 } from "../shared/probe-log.ts";
 
 const DONT_KNOW = "I don't know";
+
+/**
+ * The escape hatch on every ungraded question. A learner who cannot articulate
+ * a goal yet is the normal case, not an edge case — "I want to understand
+ * LLMs" means ten different things — and four options written by someone who
+ * has not met them will often contain none of the right one. Forcing a pick
+ * from a wrong list produces a confident record of something they do not want.
+ */
+const SOMETHING_ELSE = "Something else — let me type it";
 
 const QuizParams = Type.Object({
   question: Type.String({
@@ -72,6 +98,33 @@ const QuizParams = Type.Object({
       description: "Which phase asked this. Defaults to probe.",
     }),
   ),
+  topic: Type.Optional(
+    Type.String({ description: "The session's overall topic, so one log can serve many subjects." }),
+  ),
+});
+
+const AskParams = Type.Object({
+  question: Type.String({
+    description:
+      "The question. Self-contained — a reader who cannot see the conversation must be able to answer it.",
+  }),
+  options: Type.Array(Type.String(), {
+    minItems: 2,
+    maxItems: 5,
+    description:
+      "The choices. Make them genuinely different directions, not shades of one — the learner is steering, " +
+      "not guessing. Do not add an 'other' option; one is added for you.",
+  }),
+  why_ungraded: Type.String({
+    description:
+      "One sentence: why this question has no correct answer. This is the counterpart of quiz's correct_index — " +
+      "that field forces you to commit to an answer, this one forces you to state that there is not one. " +
+      "If what you write here reads like a rationale for one option being right, you wanted quiz.",
+  }),
+  kind: StringEnum(["goal", "direction", "preference"] as const, {
+    description:
+      "goal: what they want to be able to do. direction: which way to go next. preference: how they want to be taught.",
+  }),
   topic: Type.Optional(
     Type.String({ description: "The session's overall topic, so one log can serve many subjects." }),
   ),
@@ -189,16 +242,82 @@ export default function quizExtension(pi: ExtensionAPI) {
   });
 
   pi.registerTool({
+    name: "ask",
+    label: "Ask",
+    description:
+      "Ask the learner one question that has no correct answer — what they want to learn, which direction to " +
+      "take next, how they want to be taught — and record what they chose. This measures nothing and never " +
+      "reaches the probe log. If the question has a right answer, even one you are letting them reason toward, " +
+      "use quiz instead.",
+    promptSnippet: "ask - ask the learner one ungraded question (goal, direction, preference)",
+    promptGuidelines: [
+      "Use ask for goals and direction; use quiz for anything with a correct answer, including Socratic steps.",
+      "Call ask once at the start of a session to pin down what the learner actually wants to be able to do.",
+      "Never invent a correct_index for a question that has no correct answer — that poisons the level reading.",
+    ],
+    parameters: AskParams,
+    executionMode: "sequential",
+
+    async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+      const { question, options, why_ungraded, kind } = params;
+
+      const labelled = options.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`);
+      const choices = [...labelled, SOMETHING_ELSE];
+      const picked = await ctx.ui.select(question, choices, { signal });
+
+      const pickedIndex = picked === undefined ? -1 : choices.indexOf(picked);
+      const opted = pickedIndex >= 0 && pickedIndex < options.length;
+      const answer = opted ? options[pickedIndex]! : null;
+
+      const logged = appendDecision(ctx.cwd, {
+        kind,
+        question,
+        options,
+        answer,
+        whyUngraded: why_ungraded,
+        topic: params.topic,
+      });
+
+      const outcome = opted
+        ? `The learner chose: ${answer}`
+        : pickedIndex === choices.length - 1
+          ? "The learner picked none of the options and wants to say it in their own words. Ask them in prose, " +
+            "in your next message, and do not offer the same list again."
+          : "The learner dismissed the question without answering. Do not re-ask it; carry on with your best " +
+            "reading of what they want and say which reading you took.";
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: [
+              outcome,
+              `Kind: ${kind}`,
+              "This was not a measurement. Nothing was written to the probe log, no strand was touched, and " +
+                "this must not be counted toward their level.",
+              logged
+                ? "Recorded in .teach/decisions.jsonl, so a later session knows what they chose without asking again."
+                : `(Warning: could not write to ${decisionsPath(ctx.cwd)} — this choice will not survive the session.)`,
+            ].join("\n"),
+          },
+        ],
+        details: { kind, answered: opted, answer },
+      };
+    },
+  });
+
+  pi.registerTool({
     name: "recall",
     label: "Recall",
     description:
-      "Read what the probe log already knows about this learner: which strands are solid, shaky, absent, " +
-      "or stale, and how long ago each was measured. Call this once at the start of a session before " +
-      "probing, so you re-verify rather than re-ask everything.",
-    promptSnippet: "recall - read the learner's measured map from previous sessions",
+      "Read what this learner's logs already know: which strands are solid, shaky, absent, or stale, how long " +
+      "ago each was measured, and what they have already told you they want. Call this once at the start of a " +
+      "session before probing, so you re-verify rather than re-ask everything.",
+    promptSnippet: "recall - read the learner's measured map and prior choices",
     promptGuidelines: [
       "Call recall once at the start of a teaching session, before asking the first quiz question.",
       "Treat strands recall reports as stale as unverified: re-probe them with one question rather than assuming.",
+      "If recall reports a goal, confirm it in one sentence instead of asking for it again from scratch.",
     ],
     parameters: RecallParams,
 
@@ -208,9 +327,18 @@ export default function quizExtension(pi: ExtensionAPI) {
         ? attempts.filter((a) => a.strand.startsWith(params.strand_prefix!))
         : attempts;
       const rows = summarize(filtered);
+      const now = Date.now();
+
+      // Decisions are appended, never filtered by strand: a goal is not a strand,
+      // and a prefix query for one is not a reason to forget what they asked for.
+      const decisions = readDecisions(ctx.cwd);
+      const choices = formatDecisionsForModel(decisions, now);
+
       return {
-        content: [{ type: "text", text: formatForModel(rows, Date.now()) }],
-        details: { strands: rows.length, attempts: filtered.length },
+        content: [
+          { type: "text", text: [formatForModel(rows, now), choices].filter(Boolean).join("\n\n") },
+        ],
+        details: { strands: rows.length, attempts: filtered.length, decisions: decisions.length },
       };
     },
   });

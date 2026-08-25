@@ -37,12 +37,14 @@ fi
 
 for link in \
   "$PI_HOME/skills/teach" \
+  "$PI_HOME/skills/visualize" \
   "$PI_HOME/extensions/quiz" \
   "$PI_HOME/extensions/md-log" \
   "$PI_HOME/extensions/tutor" \
   "$PI_HOME/extensions/sources" \
   "$PI_HOME/extensions/shared" \
-  "$CLAUDE_HOME/skills/teach"
+  "$CLAUDE_HOME/skills/teach" \
+  "$CLAUDE_HOME/skills/visualize"
 do
   if [ -L "$link" ]; then
     rm -f "$link"

@@ -12,7 +12,7 @@ is unchanged either way; only the mechanism differs.
 | Capability | pi (this repo's extensions) | Claude Code / other |
 |---|---|---|
 | Graded question | `quiz` tool | `AskUserQuestion`, then append the result yourself |
-| Ungraded choice | no tool — ask in prose | `AskUserQuestion`, and do not log it |
+| Ungraded choice | `ask` tool | `AskUserQuestion`, and do not log it |
 | Prior measurements | `recall` tool | Read `.teach/probe-log.jsonl` |
 | Durable lesson file | `note` tool after `/link` | `Write`/`Edit` to the file the learner names |
 | Isolated subagent | `delegate` tool | `Task`/`Agent` tool with the definitions in `agents/` |
@@ -86,6 +86,18 @@ different treatment.
 
 Goal confirmation at the start of a session is the second kind. So is "shall we go
 deeper here or move on". Everything in the probe is the first kind.
+
+The `ask` tool takes no `correct_index` and touches no strand, so it cannot
+accidentally become a measurement. It does require `why_ungraded` — one sentence
+saying why there is no right answer. That field is the mirror image of
+`correct_index`: one makes you commit to an answer, the other makes you admit
+there is not one. If what you write there reads like a rationale for one option
+being correct, you wanted `quiz`.
+
+What `ask` records goes to `.teach/decisions.jsonl` and comes back through
+`recall` at the start of the next session, with its age. So a goal is asked for
+once and confirmed thereafter — re-asking someone what they want to learn every
+session is how a tutor signals it was not listening.
 
 Note on `quiz` during the probe: it deliberately shows the learner **nothing** —
 not the correct answer, not the rationale. Do not refer back to a reason they have

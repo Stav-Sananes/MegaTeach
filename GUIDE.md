@@ -363,9 +363,32 @@ quietly building a lesson on top of it. The horizon is 30 days.
 
 > [!TIP]
 > `.teach/probe-log.jsonl` is plain JSONL, one line per question. It is yours, it
-> is gitignored by default, and it is the only state the system has — everything
-> else is computed from it. Delete a strand's lines and it will re-probe from
-> scratch.
+> is gitignored by default, and it is the measurement state — the map, `recall`
+> and the level reading are all computed from it. Delete a strand's lines and it
+> will re-probe from scratch.
+
+### The other log: what you chose
+
+Not every question has a right answer. "What do you actually want to be able to
+do", "shall we go deeper here or move on", "do you want this derived or asserted"
+— those are yours to decide, and there is nothing to grade.
+
+Those go to `.teach/decisions.jsonl` instead, and the split matters more than it
+looks. If a goal question went into the probe log it would need a correct answer,
+and whatever got invented for it would feed the level reading — so the tutor would
+end up teaching above your real edge while the log insisted you were fine. Two
+files, one rule: **right answer → probe log, no right answer → decisions, never
+counted.**
+
+The practical effect is that you say what you want **once**. At the start of the
+next session `recall` hands your goal back with its age, and the tutor confirms it
+in a sentence instead of interviewing you again. If a choice is months old it will
+ask whether it still holds — that is the intended behaviour, not forgetfulness.
+
+Every one of these also asks the tutor to state why the question has no correct
+answer. That is deliberate: it is the same discipline as committing to a correct
+answer before you see the pick, running in the opposite direction, and it is what
+stops "which of these do you prefer" from quietly being scored.
 
 ---
 
@@ -441,7 +464,8 @@ antisymmetry was the part that did not land, and re-explains from there.
 
 1. **Answer "I don't know" honestly.** It is treated as data, not failure, and it
    is far more useful than a lucky guess.
-2. **Study in the same directory every time.** The probe log compounds.
+2. **Study in the same directory every time.** Both logs compound — the map of
+   what you know, and the record of what you said you wanted.
 3. **Add your course material before the first probe**, not after — probe questions
    drawn from your own syllabus measure the thing you are actually examined on.
 4. **Interrupt.** "Too fast", "too slow", "I don't care about this branch" all work,

@@ -45,7 +45,9 @@ front spends context on a phase you have not reached.
    Re-planning a path the learner has already walked half of is the fastest way
    to lose their trust in the plan.
 4. **Confirm the destination.** One sentence, in their words, of what they want to
-   be able to do at the end. A vague goal produces a vague path.
+   be able to do at the end. A vague goal produces a vague path. If `recall`
+   already reported a goal, confirm that one rather than asking again; if it did
+   not, `ask` is the tool — it has no correct answer, so it is not a `quiz`.
 
 ## The rules that do not change
 

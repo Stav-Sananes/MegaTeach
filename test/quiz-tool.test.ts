@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import quizExtension from "../extensions/quiz/index.ts";
+import { readDecisions } from "../extensions/shared/decisions.ts";
 import { readAttempts } from "../extensions/shared/probe-log.ts";
 
 interface Registered {
@@ -73,9 +74,91 @@ async function withTempDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
 test("quiz registers the tools and command the skill depends on", () => {
   const { pi, registered } = harness();
   quizExtension(pi);
-  assert.deepEqual([...registered.tools.keys()].sort(), ["quiz", "recall"]);
+  assert.deepEqual([...registered.tools.keys()].sort(), ["ask", "quiz", "recall"]);
   assert.ok(registered.commands.has("probe"));
   assert.equal(registered.tools.get("quiz").executionMode, "sequential");
+  // Both put a dialog in front of the learner, so neither may run concurrently
+  // with anything else that might do the same.
+  assert.equal(registered.tools.get("ask").executionMode, "sequential");
+});
+
+test("ask is not a measurement: it takes no correct answer and demands a reason it has none", () => {
+  const { pi, registered } = harness();
+  quizExtension(pi);
+  const props = registered.tools.get("ask").parameters.properties;
+  assert.ok(!("correct_index" in props), "ask must not accept a correct answer");
+  assert.ok(!("strand" in props), "ask must not touch a strand — strands are measured");
+  assert.ok("why_ungraded" in props, "ask must force a statement that there is no correct answer");
+});
+
+const CHOICE = {
+  question: "What do you want to be able to do at the end?",
+  options: ["Read a paper that uses this", "Implement it yourself"],
+  why_ungraded: "Both are legitimate destinations; only the learner knows which one they want.",
+  kind: "goal" as const,
+};
+
+test("a choice is recorded where it cannot be counted as knowledge", async () => {
+  await withTempDir(async (dir) => {
+    const { pi, registered } = harness();
+    quizExtension(pi);
+    const ctx = context(dir, registered, "Implement it yourself");
+
+    const result = await registered.tools.get("ask").execute("id", CHOICE, undefined, undefined, ctx);
+
+    assert.match(result.content[0].text, /Implement it yourself/);
+    assert.match(result.content[0].text, /not a measurement/);
+    assert.equal(result.details.answered, true);
+
+    // The point of the whole separation: nothing reached the measurement log.
+    assert.deepEqual(readAttempts(dir), []);
+    assert.equal(readDecisions(dir).length, 1);
+    assert.equal(readDecisions(dir)[0]!.answer, "Implement it yourself");
+  });
+});
+
+test("a learner who wants none of the options is not forced into one", async () => {
+  await withTempDir(async (dir) => {
+    const { pi, registered } = harness();
+    quizExtension(pi);
+    const ctx = context(dir, registered, "Something else — let me type it");
+
+    const result = await registered.tools.get("ask").execute("id", CHOICE, undefined, undefined, ctx);
+
+    assert.equal(result.details.answered, false);
+    assert.match(result.content[0].text, /their own words/);
+    assert.equal(readDecisions(dir)[0]!.answer, null);
+  });
+});
+
+test("dismissing an ungraded question is not re-asked and not recorded as a choice", async () => {
+  await withTempDir(async (dir) => {
+    const { pi, registered } = harness();
+    quizExtension(pi);
+    const ctx = context(dir, registered, undefined);
+
+    const result = await registered.tools.get("ask").execute("id", CHOICE, undefined, undefined, ctx);
+
+    assert.equal(result.details.answered, false);
+    assert.match(result.content[0].text, /Do not re-ask/);
+    assert.equal(readDecisions(dir)[0]!.answer, null);
+  });
+});
+
+test("recall hands back the goal alongside the map, so it is not asked for twice", async () => {
+  await withTempDir(async (dir) => {
+    const { pi, registered } = harness();
+    quizExtension(pi);
+    const ctx = context(dir, registered, "Read a paper that uses this");
+
+    await registered.tools.get("ask").execute("id", CHOICE, undefined, undefined, ctx);
+    const recalled = await registered.tools
+      .get("recall")
+      .execute("id", {}, undefined, undefined, ctx);
+
+    assert.match(recalled.content[0].text, /Read a paper that uses this/);
+    assert.equal(recalled.details.decisions, 1);
+  });
 });
 
 test("a correct answer grades right and reaches the log", async () => {
